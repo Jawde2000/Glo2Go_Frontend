@@ -1,24 +1,6 @@
-import React from "react";
-import { List, ListItem, ListItemText, ListItemAvatar, Avatar, Typography, Box } from "@mui/material";
+import React, { useState, useEffect } from 'react';
+import { List, ListItem, ListItemText, ListItemAvatar, Avatar, Typography, Box, CircularProgress } from "@mui/material";
 import { Link } from "react-router-dom";
-
-const attractions = [
-  {
-    name: "Eiffel Tower",
-    countryCode: "FR",
-    country: "France",
-    operatingHours: "9:00 AM - 6:00 PM",
-    description: "The iconic symbol of Paris and one of the most visited landmarks in the world...",
-  },
-  {
-    name: "Great Wall of China",
-    countryCode: "CN",
-    country: "China",
-    operatingHours: "8:00 AM - 5:00 PM",
-    description: "A UNESCO World Heritage site and one of the most impressive architectural feats...",
-  },
-  // Add more attractions here
-];
 
 const TruncatedDescription = ({ text, maxLength }) => {
   if (text.length <= maxLength) {
@@ -29,33 +11,63 @@ const TruncatedDescription = ({ text, maxLength }) => {
 };
 
 function AttractionList() {
+  const [sites, setSites] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSites = async () => {
+      try {
+        const response = await fetch('https://localhost:7262/api/Site/ViewSites');
+        if (!response.ok) {
+          throw new Error('Failed to fetch sites');
+        }
+        const data = await response.json();
+        setSites(data);
+      } catch (error) {
+        console.error("Error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSites();
+  }, []);
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <List>
-      {attractions.map((attraction, index) => (
+      {sites.map((site, index) => (
         <ListItem
-          key={index}
+          key={site.siteID || index}
           alignItems="flex-start"
           button
           component={Link}
-          to={`/attraction/${index}`} // Update this URL as needed
+          to={`/attraction/${site.siteID}`} // Assuming siteID is unique and used for routing
         >
           <ListItemAvatar>
-            <Avatar>{attraction.name[0]}</Avatar>
+            <Avatar>{site.siteName[0]}</Avatar>
           </ListItemAvatar>
           <ListItemText
-            primary={attraction.name}
+            primary={site.siteName}
             secondary={
               <React.Fragment>
                 <Typography component="span" variant="body2" color="textPrimary">
-                  {attraction.country}
+                  {site.siteCountry}
                 </Typography>
                 <br />
                 <Typography component="span" variant="body2" color="textSecondary">
-                  {attraction.operatingHours}
+                  {site.siteOperatingHour}
                 </Typography>
                 <br />
                 <Box component="span" display="block" maxWidth="90%">
-                  <TruncatedDescription text={attraction.description} maxLength={50} />
+                  <TruncatedDescription text={site.siteDesc} maxLength={100} />
                 </Box>
               </React.Fragment>
             }

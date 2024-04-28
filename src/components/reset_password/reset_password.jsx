@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Container, Typography, Paper, TextField, Button, Box, CircularProgress } from '@mui/material';
+import { Container, Typography, Paper, Box, CircularProgress } from '@mui/material';
+import { Button, TextField} from '@material-ui/core';
 import { useNavigate } from 'react-router-dom';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
@@ -7,6 +8,7 @@ function ForgotPasswordScreen() {
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [responseEmail, setResponseEmail] = useState("");
     const navigate = useNavigate();
 
     const handleEmailChange = (event) => {
@@ -17,17 +19,30 @@ function ForgotPasswordScreen() {
         event.preventDefault();
         setLoading(true);
         try {
-            console.log('Forgot Password: Email =', email);
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate network delay
-            setLoading(false);
-            setSubmitted(true);
-            setTimeout(() => navigate('/login'), 3000); // Redirect to login after 3 seconds
+            const response = await fetch('https://localhost:7262/api/Authentication/forgotpassword', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ Email: email }),
+            });
+    
+            if (response.ok) {
+                setResponseEmail(response.data.message);
+                alert(response.data.message);
+                setLoading(false);
+                setSubmitted(true);
+                setTimeout(() => navigate('/glo2go/login'), 3000); // Redirect to login after 3 seconds
+            } else {
+                setLoading(false);
+                alert(response.data.message);
+            }
         } catch (error) {
             setLoading(false);
             alert('An error occurred, please try again later.');
         }
     };
+    
 
     if (submitted) {
         return (
@@ -38,7 +53,7 @@ function ForgotPasswordScreen() {
                         Reset link sent!
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
-                        Please check your email to reset your password.
+                        {responseEmail}
                     </Typography>
                 </Box>
             </Container>
@@ -69,14 +84,12 @@ function ForgotPasswordScreen() {
                             margin="normal"
                             required
                             fullWidth
-                            id="email"
                             label="Please Enter your registered email"
                             name="email"
                             autoComplete="email"
                             autoFocus
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            InputLabelProps={{ shrink: false }}
                         />
                         <Button
                             type="submit"

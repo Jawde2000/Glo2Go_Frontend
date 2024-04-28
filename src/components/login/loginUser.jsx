@@ -1,19 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container, Typography, Paper, Avatar, TextField,
   Button, Grid, CssBaseline, Box, Divider, Link,
 } from "@mui/material";
 import { Google as GoogleIcon } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
 import Glo2goLogo2 from "../../pictures/Glo2goLogo2.png";
 import axios from 'axios';
+import Cookies from 'js-cookie';
+import { useNavigate } from "react-router-dom";
 
 function LoginUserScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
+  const [isLogged, setLogged] = useState(false);
+
+  useEffect(() => {
+    if (Cookies.get('token')) {
+      setLogged(true);
+      navigate('/dash');
+    }
+  }, [navigate]);
+
   axios.defaults.withCredentials = true;
+  
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -23,11 +34,15 @@ function LoginUserScreen() {
         password: password,
       }, { withCredentials: true });
 
-      if (response.status === 200) {
+      console.log(response);
+
+      if (response.data.flag) {
         alert(response.data.message);
-        navigate('/dash'); // Adjust this route as needed
+        Cookies.set('refreshToken', response.data.refreshToken, { sameSite: 'Strict', secure: true });
+        Cookies.set('token', response.data.token, { sameSite: 'Strict', secure: true });
+        // navigate('/dash'); // Adjust this route as needed
       } else {
-        alert(response.data.message || "Login failed");
+        alert(response.data.message);
       }
     } catch (error) {
       console.error("Error during login:", error.response);
@@ -87,7 +102,7 @@ function LoginUserScreen() {
                   required
                   fullWidth
                   id="email"
-                  placeholder="Email Address"
+                  placeholder="Email Address Or Username"
                   name="email"
                   autoComplete="email"
                   autoFocus

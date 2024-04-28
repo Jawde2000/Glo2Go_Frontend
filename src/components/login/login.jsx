@@ -1,31 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container, Typography, Paper, Avatar, TextField, Button,
-  Grid, CssBaseline, Card, CardContent, Modal, CardMedia, Box 
+  Grid, CssBaseline, Card, CardContent, Modal, CardMedia, Box, CircularProgress
 } from "@mui/material";
 import { LockOutlined as LockOutlinedIcon, Star as StarIcon } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 
 function LoginScreen() {
   const [openAddTrip, setOpenAddTrip] = useState(false);
-  const handleOpenAddTrip = () => setOpenAddTrip(true);
-  const handleCloseAddTrip = () => setOpenAddTrip(false);
   const [email, setEmail] = useState('');
-
-  const featuredLocations = [
-    { name: "Ancient Temples", description: "Explore historic temples and learn about their history.", image: "temples.jpg" },
-    { name: "Safari Adventure", description: "Get close to wildlife with our guided safari tours.", image: "safari.jpg" }
-  ];
+  const [loading, setLoading] = useState(true);
+  const [randomAttraction, setRandomAttraction] = useState(null);
 
   const upcomingEvents = [
     { name: "Music Festival", date: "2024-05-30", location: "Beach Resort" },
     { name: "Culinary Week", date: "2024-06-15", location: "City Center" }
-  ];
-
-  const userReviews = [
-    { username: "User1", rating: 4, comment: "Great app! Easy to use and very user-friendly." },
-    { username: "User2", rating: 5, comment: "Love the features and design. Highly recommend!" },
-    { username: "User3", rating: 4.5, comment: "Excellent customer support. Quick response to queries." },
   ];
 
   const locationSuggestions = [
@@ -34,18 +23,57 @@ function LoginScreen() {
     { name: "Cityscape View", image: "https://img.freepik.com/premium-photo/aerial-view-chicago-skylines-south-sunset_63253-7235.jpg" },
   ];
 
+
+  const userReviews = [
+    { username: "User1", rating: 4, comment: "Great app! Easy to use and very user-friendly." },
+    { username: "User2", rating: 5, comment: "Love the features and design. Highly recommend!" },
+    { username: "User3", rating: 4.5, comment: "Excellent customer support. Quick response to queries." },
+  ];
+
+  const featuredLocations = [
+    { name: "Ancient Temples", description: "Explore historic temples and learn about their history.", image: "temples.jpg" },
+    { name: "Safari Adventure", description: "Get close to wildlife with our guided safari tours.", image: "safari.jpg" }
+  ];
+
+  useEffect(() => {
+    fetch('https://localhost:7262/api/Site/ViewSites')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Select a random attraction from the fetched data
+        const randomIndex = Math.floor(Math.random() * data.length);
+        setRandomAttraction(data[randomIndex]);
+      })
+      .catch(error => console.error("Error fetching data:", error))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleOpenAddTrip = () => setOpenAddTrip(true);
+  const handleCloseAddTrip = () => setOpenAddTrip(false);
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
-    <Container component="main" maxWidth="sm">
+    <Container component="main" maxWidth="md"> {/* Adjusted maxWidth for better fit on larger screens */}
       <CssBaseline />
-      <Paper elevation={6} sx={{ my: 4, p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <Paper elevation={6} sx={{ my: 4, p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
           <LockOutlinedIcon />
         </Avatar>
         <Typography component="h1" variant="h5">
           Welcome back
         </Typography>
-        <form sx={{ mt: 1 }}>
-          {/* Existing form fields */}
+        <form sx={{ width: '100%', mt: 1 }}> {/* Ensure form takes full width of the Paper component */}
           <Button
             fullWidth
             variant="contained"
@@ -75,7 +103,7 @@ function LoginScreen() {
               </Button>
             </Box>
           </Modal>
-          {/* User Reviews Section */}
+                    {/* User Reviews Section */}
           <Grid container spacing={2} sx={{ mt: 2 }}>
             {userReviews.map((review, index) => (
               <Grid item xs={12} sm={4} key={index}>
@@ -111,30 +139,32 @@ function LoginScreen() {
               </Grid>
             ))}
           </Grid>
-        </form>
-        {/* Featured Locations Section */}
-        <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>
-          Featured Locations
-        </Typography>
-        <Grid container spacing={2}>
-          {featuredLocations.map((location, index) => (
-            <Grid item xs={12} sm={6} key={index}>
+          {/* Featured Attraction Section */}
+          {randomAttraction && (
+            <Box sx={{ mt: 4, width: '100%' }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Featured Attraction
+              </Typography>
               <Card>
-                <CardMedia component="img" height="140" image={location.image} alt={location.name} />
+                <CardMedia
+                  component="img"
+                  height="140"
+                  image={randomAttraction.sitePics[0] || '/static/images/placeholder.jpg'}
+                  alt={randomAttraction.siteName}
+                />
                 <CardContent>
                   <Typography gutterBottom variant="h6" component="div">
-                    {location.name}
+                    {randomAttraction.siteName}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {location.description}
+                    {randomAttraction.siteDesc}
                   </Typography>
                 </CardContent>
               </Card>
-            </Grid>
-          ))}
-        </Grid>
-
-        {/* Upcoming Events Section */}
+            </Box>
+          )}
+          {/* Existing UI elements remain the same */}
+          {/* Upcoming Events Section */}
         <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>
           Upcoming Events
         </Typography>
@@ -147,7 +177,7 @@ function LoginScreen() {
         </Box>
 
         {/* Newsletter Subscription */}
-        <Box sx={{ mt: 4 }}>
+        <Box sx={{ mt: 4, width: '100%', px: { xs: 1, sm: 3, md: 10 } }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             Stay Updated with Our Newsletter
           </Typography>
@@ -163,6 +193,7 @@ function LoginScreen() {
             Subscribe
           </Button>
         </Box>
+        </form>
       </Paper>
     </Container>
   );

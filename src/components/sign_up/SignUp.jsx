@@ -36,11 +36,11 @@ const SignUp = () => {
 
       if (response.ok) {
         // enqueueSnackbar(data.message, { variant: 'success' });
-        alert(data.e);
+        alert(data.message);
       } else {
         // enqueueSnackbar(data.message || "Registration failed. Please try again.", { variant: 'error' });
 
-        alert(data);
+        alert(data.message);
       }
     } catch (error) {
       console.error('Error during registration:', error);
