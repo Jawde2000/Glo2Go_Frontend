@@ -9,7 +9,7 @@ import axios from 'axios';
 import AdminLogo from '../../../pictures/Glo2goLogo.png';
 
 function AdminLoginScreen() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
@@ -18,16 +18,18 @@ function AdminLoginScreen() {
   const handleAdminLogin = async (event) => {
     event.preventDefault();
     try {
-      const response = await axios.post('https://localhost:7262/api/authentication/login', {
-        username,
-        password,
+      const response = await axios.post('https://localhost:7262/api/authentication/admin/login', {
+        email: email,
+        password: password,
       }, { withCredentials: true });
 
+      console.log(response.data);
+
       if (response.data.isAdmin) {
-        alert('Login successful!');
+        alert(response.data.message);
         navigate('/admin/dashboard');  // Adjust this route as needed
       } else {
-        alert('Access Denied: Insufficient Privileges');
+        alert(response.data.message);
       }
     } catch (error) {
       console.error("Admin login error:", error.response);
@@ -71,13 +73,13 @@ function AdminLoginScreen() {
               margin="normal"
               required
               fullWidth
-              id="username"
-              label="Username"
-              name="username"
-              autoComplete="username"
+              id="email"
+              label="email"
+              name="email"
+              autoComplete="email"
               autoFocus
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
             <TextField
               margin="normal"

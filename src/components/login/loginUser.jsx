@@ -40,7 +40,7 @@ function LoginUserScreen() {
         alert(response.data.message);
         Cookies.set('refreshToken', response.data.refreshToken, { sameSite: 'Strict', secure: true });
         Cookies.set('token', response.data.token, { sameSite: 'Strict', secure: true });
-        // navigate('/dash'); // Adjust this route as needed
+        navigate('/dash'); // Adjust this route as needed
       } else {
         alert(response.data.message);
       }

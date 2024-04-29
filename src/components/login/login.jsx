@@ -4,7 +4,7 @@ import {
   Grid, CssBaseline, Card, CardContent, Modal, CardMedia, Box, CircularProgress
 } from "@mui/material";
 import { LockOutlined as LockOutlinedIcon, Star as StarIcon } from "@mui/icons-material";
-import { Link } from "react-router-dom";
+import { TransitionGroup } from 'react-transition-group';
 
 function LoginScreen() {
   const [openAddTrip, setOpenAddTrip] = useState(false);
@@ -67,9 +67,6 @@ function LoginScreen() {
     <Container component="main" maxWidth="md"> {/* Adjusted maxWidth for better fit on larger screens */}
       <CssBaseline />
       <Paper elevation={6} sx={{ my: 4, p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-          <LockOutlinedIcon />
-        </Avatar>
         <Typography component="h1" variant="h5">
           Welcome back
         </Typography>

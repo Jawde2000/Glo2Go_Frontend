@@ -18,16 +18,23 @@ import ResetPassword from './components/reset_password/reset_link';
 import AdminLoginScreen from './components/Admin/AdminLogin/AdminLoginScreen';
 import Cookies from 'js-cookie';
 import React, { useEffect, useState } from 'react';
+import TravelerList from './components/Admin/UserManagement/TravelerList';
+import TravelerForm from './components/Admin/UserManagement/TravelerForm';
+import TravelerDetails from './components/Admin/UserManagement/TravelerDetails';
 
 function App() {
 
   const [isLogged, setLogged] = useState(false);
 
   useEffect(() => {
-    if (Cookies.get('token')) {
+    const token = Cookies.get('token');
+    if (token) {
       setLogged(true);
+    } else {
+      setLogged(false);
     }
-  }, []);
+  }, [isLogged]); // The empty dependency array ensures this runs once on mount
+  
 
   return (
     <CookiesProvider>
@@ -74,8 +81,17 @@ function App() {
           <Routes>
             <Route path='/admin/glo2go/login' element={<AdminLoginScreen />} />
           </Routes>
+          <Routes>
+            <Route path='/admin/glo2go/dashboard/travellist' element={<TravelerList />} />
+          </Routes>
+          <Routes>
+            <Route path='/admin/glo2go/dashboard/travellist/travelerform' element={<TravelerForm />} />
+          </Routes>
+          <Routes>
+            <Route path='/admin/glo2go/dashboard/travellist/travelerdetails' element={<TravelerDetails />} />
+          </Routes>
+          {isLogged? <BottomNavigationbar />: null}
       </BrowserRouter>
-      {isLogged? <BottomNavigationbar />: null}
     </CookiesProvider>
   );
 }
