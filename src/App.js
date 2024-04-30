@@ -1,7 +1,7 @@
 import logo from './logo.svg';
 import './App.css';
 import { CookiesProvider } from 'react-cookie';
-import {Route, BrowserRouter, Routes} from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './components/home/home';
 import UserReviewScreen from './components/site/personal_rating_review/user_review_screen';
 import BottomNavigationbar from './components/home/bottomnavigation';
@@ -21,9 +21,11 @@ import React, { useEffect, useState } from 'react';
 import TravelerList from './components/Admin/UserManagement/TravelerList';
 import TravelerForm from './components/Admin/UserManagement/TravelerForm';
 import TravelerDetails from './components/Admin/UserManagement/TravelerDetails';
+import AttractionsList from './components/home/attractionList';
+import Footer from './components/home/Footer';
+import SiteDetails from './components/home/SiteDetails';
 
 function App() {
-
   const [isLogged, setLogged] = useState(false);
 
   useEffect(() => {
@@ -33,65 +35,35 @@ function App() {
     } else {
       setLogged(false);
     }
-  }, [isLogged]); // The empty dependency array ensures this runs once on mount
-  
+  }, []);
 
   return (
     <CookiesProvider>
-      <BrowserRouter>
-          <Routes>
-            <Route path="home" element={<Home />} />
-          </Routes>
-          {/* <Routes>
-            <Route path="/attraction/:attractionId" element={<AttractionDetail />}/>
-          </Routes> */}
-          <Routes>
-            <Route path="/review" element={<UserReviewScreen />} />
-          </Routes>
-          <Routes>
-            <Route path="/dash" element={<LoginScreen />}/>
-          </Routes>
-          <Routes>
-            <Route path="/forgotpassword" element={<ForgotPasswordScreen />}/>
-          </Routes>
-          <Routes>
-            <Route path="/travelplans" element={<TravelPlanDisplay />}/>
-          </Routes>
-          <Routes>
-            <Route path="/newtimeline" element={<NewTimelines />} />
-          </Routes>
-          <Routes>
-            <Route path='/glo2go/signup' element={<SignUp />} />
-          </Routes>
-          <Routes>
-            <Route path='/glo2go/login' element={<LoginUserScreen />} />
-          </Routes>
-          <Routes>
-            <Route path='/glo2go/reset-password' element={<ResetPassword />} />
-          </Routes>
-          <Routes>
-            <Route path='/admin/glo2go/updatesite' element={<UpdateSiteForm />} />
-          </Routes>
-          <Routes>
-            <Route path='/admin/glo2go/createsite' element={<CreateSiteForm />} />
-          </Routes>
-          <Routes>
-            <Route path='/admin/glo2go/viewsite' element={<ViewSites />} />
-          </Routes>
-          <Routes>
-            <Route path='/admin/glo2go/login' element={<AdminLoginScreen />} />
-          </Routes>
-          <Routes>
-            <Route path='/admin/glo2go/dashboard/travellist' element={<TravelerList />} />
-          </Routes>
-          <Routes>
-            <Route path='/admin/glo2go/dashboard/travellist/travelerform' element={<TravelerForm />} />
-          </Routes>
-          <Routes>
-            <Route path='/admin/glo2go/dashboard/travellist/travelerdetails' element={<TravelerDetails />} />
-          </Routes>
-          {isLogged? <BottomNavigationbar />: null}
-      </BrowserRouter>
+      <Router>
+        {isLogged ? <BottomNavigationbar /> : null}
+        <Routes>
+          <Route path="home" element={<Home />} />
+          <Route path="review" element={<UserReviewScreen />} />
+          <Route path="dash" element={<LoginScreen />} />
+          <Route path="forgotpassword" element={<ForgotPasswordScreen />} />
+          <Route path="travelplans" element={<TravelPlanDisplay />} />
+          <Route path="newtimeline" element={<NewTimelines />} />
+          <Route path="glo2go/signup" element={<SignUp />} />
+          <Route path="glo2go/login" element={<LoginUserScreen />} />
+          <Route path="glo2go/reset-password" element={<ResetPassword />} />
+          <Route path="admin/glo2go/updatesite" element={<UpdateSiteForm />} />
+          <Route path="admin/glo2go/createsite" element={<CreateSiteForm />} />
+          <Route path="admin/glo2go/viewsite" element={<ViewSites />} />
+          <Route path="admin/glo2go/login" element={<AdminLoginScreen />} />
+          <Route path="admin/glo2go/dashboard/travellist" element={<TravelerList />} />
+          <Route path="admin/glo2go/dashboard/travellist/travelerform" element={<TravelerForm />} />
+          <Route path="admin/glo2go/dashboard/travellist/travelerdetails" element={<TravelerDetails />} />
+          <Route path='glo2go/AttractionsList' element={<AttractionsList />} />
+          <Route path="glo2go/AttractionsList/:siteId" element={<SiteDetails />} />
+          {/* Include any other routes here */}
+        </Routes>
+        <Footer />
+      </Router>
     </CookiesProvider>
   );
 }

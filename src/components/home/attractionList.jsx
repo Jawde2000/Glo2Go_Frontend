@@ -1,81 +1,104 @@
 import React, { useState, useEffect } from 'react';
-import { List, ListItem, ListItemText, ListItemAvatar, Avatar, Typography, Box, CircularProgress } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link } from 'react-router-dom';
+import {
+  Card, CardMedia, CardContent, CardActions, Typography,
+  Button, Container, Grid, CircularProgress, Alert, TablePagination
+} from '@mui/material';
 
-const TruncatedDescription = ({ text, maxLength }) => {
-  if (text.length <= maxLength) {
-    return <>{text}</>;
-  } else {
-    return <>{text.slice(0, maxLength)}...</>;
-  }
-};
-
-function AttractionList() {
+function AttractionsList() {
   const [sites, setSites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(6);  // Customize based on your layout
+
+  const truncate = (text, length = 100) => {
+    if (text.length > length) {
+      return text.substring(0, length) + '...';
+    }
+    return text;
+  };
 
   useEffect(() => {
-    const fetchSites = async () => {
-      try {
-        const response = await fetch('https://localhost:7262/api/Site/ViewSites');
+    fetch('https://localhost:7262/api/Site/ViewSites')
+      .then(response => {
         if (!response.ok) {
-          throw new Error('Failed to fetch sites');
+          throw new Error('Network response was not ok');
         }
-        const data = await response.json();
+        return response.json();
+      })
+      .then(data => {
         setSites(data);
-      } catch (error) {
-        console.error("Error:", error);
-      } finally {
         setLoading(false);
-      }
-    };
-
-    fetchSites();
+      })
+      .catch(error => {
+        console.error('Error fetching sites:', error);
+        setError(error.message);
+        setLoading(false);
+      });
   }, []);
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = event => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);  // Reset page to 0 when changing the number of items per page
+  };
+
+  if (loading) return <CircularProgress color="secondary" />;
+  if (error) return <Alert severity="error">{error}</Alert>;
+
+  // Calculate the current slice of data to display
+  const currentData = sites.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
-    <List>
-      {sites.map((site, index) => (
-        <ListItem
-          key={site.siteID || index}
-          alignItems="flex-start"
-          button
-          component={Link}
-          to={`/attraction/${site.siteID}`} // Assuming siteID is unique and used for routing
-        >
-          <ListItemAvatar>
-            <Avatar>{site.siteName[0]}</Avatar>
-          </ListItemAvatar>
-          <ListItemText
-            primary={site.siteName}
-            secondary={
-              <React.Fragment>
-                <Typography component="span" variant="body2" color="textPrimary">
-                  {site.siteCountry}
+    <Container maxWidth="lg">
+      <Typography variant="h4" component="h1" gutterBottom sx={{ marginTop: 4, marginBottom: 2 }}>
+        Sites
+      </Typography>
+      <Grid container spacing={4}>
+        {currentData.map((site) => (
+          <Grid item key={site.siteID} xs={12} sm={6} md={4}>
+            <Card raised elevation={6}>
+              <CardMedia
+                component="img"
+                height="200"
+                image={site.sitePics?.[0] || '/static/images/placeholder.jpg'}
+                alt={site.siteName || 'Attraction Image'}
+              />
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Typography gutterBottom variant="h6" component="div">
+                  {site.siteName}
                 </Typography>
-                <br />
-                <Typography component="span" variant="body2" color="textSecondary">
-                  {site.siteOperatingHour}
+                <Typography variant="body2" color="text.secondary">
+                  {truncate(site.siteDesc, 40)} {/* Truncate to 50 characters */}
                 </Typography>
-                <br />
-                <Box component="span" display="block" maxWidth="90%">
-                  <TruncatedDescription text={site.siteDesc} maxLength={100} />
-                </Box>
-              </React.Fragment>
-            }
-          />
-        </ListItem>
-      ))}
-    </List>
+
+                <Typography variant="body2">
+                  <strong>Operating Hours:</strong> {site.siteOperatingHour}
+                </Typography>
+              </CardContent>
+              <CardActions sx={{ justifyContent: 'center' }}>
+                <Button size="small" color="primary" component={Link} to={`/glo2go/AttractionsList/${site.siteID}`}>
+                  View More
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+      <TablePagination
+        component="div"
+        count={sites.length}
+        page={page}
+        onPageChange={handleChangePage}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+      />
+    </Container>
   );
 }
 
-export default AttractionList;
+export default AttractionsList;

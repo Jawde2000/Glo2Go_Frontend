@@ -8,16 +8,19 @@ import {
   Paper,
   Button,
   IconButton,
+  useTheme,
 } from '@mui/material';
 import { useQuery } from 'react-query';
 import { DeleteForever } from '@mui/icons-material'; // Import DeleteForever icon
 
 const fetchTravelers = async () => {
-  // Implement API call to fetch travelers from backend
+  // Placeholder for the API call to fetch travelers
+  return [];
 };
 
 const TravelerList = () => {
   const [travelers, setTravelers] = useState([]);
+  const theme = useTheme();
 
   const { isLoading, error, data } = useQuery('travelers', fetchTravelers);
 
@@ -29,12 +32,32 @@ const TravelerList = () => {
   if (error) return <p>Error fetching travelers: {error.message}</p>;
 
   const handleDeleteTraveler = async (travelerId) => {
-    // Implement API call to delete traveler on backend
-    // Handle success/error scenarios
+    // Placeholder for API call to delete a traveler
+  };
+
+  const colors = { // Assuming similar color setup or import your theme colors if you have them
+    primary: theme.palette.primary.main,
+    error: theme.palette.error.main,
+    background: theme.palette.background.paper,
   };
 
   return (
-    <Paper sx={{ width: '100%' }}>
+    <Paper sx={{
+      width: '100%',
+      overflow: 'hidden',
+      backgroundColor: colors.background,
+      '& .MuiTableCell-head': {
+        backgroundColor: colors.primary,
+        color: theme.palette.common.white,
+        fontWeight: 'bold',
+      },
+      '& .MuiButton-contained': {
+        margin: theme.spacing(1),
+      },
+      '& .MuiIconButton-root': {
+        color: colors.error,
+      },
+    }}>
       <Table>
         <TableHead>
           <TableRow>
@@ -55,7 +78,7 @@ const TravelerList = () => {
                   Edit
                 </Button>
                 <IconButton onClick={() => handleDeleteTraveler(traveler.TravelerEmail)}>
-                  <DeleteForever color="error" />
+                  <DeleteForever />
                 </IconButton>
               </TableCell>
             </TableRow>

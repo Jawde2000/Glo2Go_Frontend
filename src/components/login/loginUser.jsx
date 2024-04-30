@@ -18,7 +18,6 @@ function LoginUserScreen() {
 
   useEffect(() => {
     if (Cookies.get('token')) {
-      setLogged(true);
       navigate('/dash');
     }
   }, [navigate]);
