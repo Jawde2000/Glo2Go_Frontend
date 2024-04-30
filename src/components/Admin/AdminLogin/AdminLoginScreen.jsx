@@ -27,7 +27,7 @@ function AdminLoginScreen() {
 
       if (response.data.isAdmin) {
         alert(response.data.message);
-        navigate('/admin/dashboard');  // Adjust this route as needed
+        navigate('/admin/glo2go/dashboard');  // Adjust this route as needed
       } else {
         alert(response.data.message);
       }

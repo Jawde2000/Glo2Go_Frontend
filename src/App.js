@@ -24,6 +24,8 @@ import TravelerDetails from './components/Admin/UserManagement/TravelerDetails';
 import AttractionsList from './components/home/attractionList';
 import Footer from './components/home/Footer';
 import SiteDetails from './components/home/SiteDetails';
+import UserProfile from './components/home/UserProfile';
+import Dashboard from './components/Admin/dashboard/Dashboard';
 
 function App() {
   const [isLogged, setLogged] = useState(false);
@@ -58,8 +60,10 @@ function App() {
           <Route path="admin/glo2go/dashboard/travellist" element={<TravelerList />} />
           <Route path="admin/glo2go/dashboard/travellist/travelerform" element={<TravelerForm />} />
           <Route path="admin/glo2go/dashboard/travellist/travelerdetails" element={<TravelerDetails />} />
+          <Route path="admin/glo2go/dashboard" element={<Dashboard />} />
           <Route path='glo2go/AttractionsList' element={<AttractionsList />} />
           <Route path="glo2go/AttractionsList/:siteId" element={<SiteDetails />} />
+          <Route path="glo2go/userprofile" element={<UserProfile />} />
           {/* Include any other routes here */}
         </Routes>
         <Footer />
