@@ -152,7 +152,7 @@ function LoginScreen() {
                       <CardMedia
                           component="img"
                           height="140"
-                          image={randomAttraction.sitePics[0] || '/static/images/placeholder.jpg'}
+                          image={randomAttraction.sitePics && randomAttraction.sitePics.length > 0 ? randomAttraction.sitePics[0] : '/static/images/placeholder.jpg'}
                           alt={randomAttraction.siteName}
                       />
                       <CardContent>

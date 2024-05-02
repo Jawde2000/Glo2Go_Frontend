@@ -8,45 +8,31 @@ import Glo2goLogo2 from "../../pictures/Glo2goLogo2.png";
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { useNavigate } from "react-router-dom";
+import { login } from '../../actions/userActions';
+import {useSelector, useDispatch} from 'react-redux';
 
 function LoginUserScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-
+  const dispatch = useDispatch();
   const [isLogged, setLogged] = useState(false);
 
+  const userLogin = useSelector(state => state.userLogin)
+  const {userInfo} = userLogin;
+
   useEffect(() => {
-    if (Cookies.get('token')) {
-      navigate('/dash');
+    if (userInfo) {
+      navigate('/glo2go/home');
     }
-  }, [navigate]);
+  }, [navigate, userInfo]);
 
   axios.defaults.withCredentials = true;
   
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    try {
-      const response = await axios.post('https://localhost:7262/api/authentication/login', {
-        email: email,
-        password: password,
-      }, { withCredentials: true });
-
-      console.log(response);
-
-      if (response.data.flag) {
-        alert(response.data.message);
-        Cookies.set('refreshToken', response.data.refreshToken, { sameSite: 'Strict', secure: true });
-        Cookies.set('token', response.data.token, { sameSite: 'Strict', secure: true });
-        navigate('/dash'); // Adjust this route as needed
-      } else {
-        alert(response.data.message);
-      }
-    } catch (error) {
-      console.error("Error during login:", error.response);
-      alert("Login error: " + (error.response?.data?.message || error.message));
-    }
+    dispatch(login(email, password));
   };
 
   return (

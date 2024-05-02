@@ -1,10 +1,9 @@
-import logo from './logo.svg';
 import './App.css';
 import { CookiesProvider } from 'react-cookie';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './components/home/home';
 import UserReviewScreen from './components/site/personal_rating_review/user_review_screen';
-import BottomNavigationbar from './components/home/bottomnavigation';
+import UserNavigationbar from './components/home/UserNavigation.jsx';
 import LoginScreen from './components/login/login';
 import ForgotPasswordScreen from './components/reset_password/reset_password';
 import TravelPlanDisplay from './components/timelines/travelplans/travelplansDisplay';
@@ -26,27 +25,64 @@ import Footer from './components/home/Footer';
 import SiteDetails from './components/home/SiteDetails';
 import UserProfile from './components/home/UserProfile';
 import Dashboard from './components/Admin/dashboard/Dashboard';
+import SideBar from './components/Admin/dashboard/Sidebar';
+import Topbar from './components/Admin/dashboard/Topbar.jsx';
+import ViewSite from './components/site/Site/ViewSite.jsx';
+import { ColorModeContext, useMode } from '../src/theme.jsx';
+import { styled, useTheme } from '@mui/material/styles';
+import {useSelector} from 'react-redux';
+
+const drawerWidth = 300;
+
+const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
+  ({ theme, open }) => ({
+    flexGrow: 1,
+    padding: theme.spacing(3),
+    transition: theme.transitions.create('margin', {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.leavingScreen,
+    }),
+    marginLeft: `-${drawerWidth}px`,
+    ...(open && {
+      transition: theme.transitions.create('margin', {
+        easing: theme.transitions.easing.easeOut,
+        duration: theme.transitions.duration.enteringScreen,
+      }),
+      marginLeft: 0,
+    }),
+  }),
+);
 
 function App() {
   const [isLogged, setLogged] = useState(false);
+  const [theme, colorMode] = useMode();
+  const [open, setOpen] = useState(false);
+
+  const handleDrawerOpen = () => setOpen(true);
+  const handleDrawerClose = () => setOpen(false);
+
+  const [isAdmin, setAdmin] = useState("");
+
+  const userLogin = useSelector(state => state.userLogin)
+  const {userInfo, admin} = userLogin;
 
   useEffect(() => {
-    const token = Cookies.get('token');
-    if (token) {
-      setLogged(true);
-    } else {
-      setLogged(false);
-    }
-  }, []);
+    console.log(userInfo);
+    console.log(admin);
+    // Additional logic to handle user state changes
+  }, [userInfo, admin, userLogin]); // Dependency array includes userInfo and admin
 
   return (
     <CookiesProvider>
       <Router>
-        {isLogged ? <BottomNavigationbar /> : null}
+      {admin !== "true"?<UserNavigationbar />:null}
+      {userInfo && admin === "true"? <Topbar /> : null}
+      {userInfo && admin === "true"? <SideBar open={open} handleDrawerOpen={handleDrawerOpen} handleDrawerClose={handleDrawerClose} /> : null}
         <Routes>
+          <Route path="/" element={<Navigate replace to="/glo2go/home" />} />
           <Route path="home" element={<Home />} />
           <Route path="review" element={<UserReviewScreen />} />
-          <Route path="dash" element={<LoginScreen />} />
+          <Route path="glo2go/home" element={<LoginScreen />} />
           <Route path="forgotpassword" element={<ForgotPasswordScreen />} />
           <Route path="travelplans" element={<TravelPlanDisplay />} />
           <Route path="newtimeline" element={<NewTimelines />} />
@@ -55,7 +91,8 @@ function App() {
           <Route path="glo2go/reset-password" element={<ResetPassword />} />
           <Route path="admin/glo2go/updatesite" element={<UpdateSiteForm />} />
           <Route path="admin/glo2go/createsite" element={<CreateSiteForm />} />
-          <Route path="admin/glo2go/viewsite" element={<ViewSites />} />
+          <Route path="admin/glo2go/site" element={<ViewSites />} />
+          <Route path="admin/glo2go/site/:siteId" element={<ViewSite />} />
           <Route path="admin/glo2go/login" element={<AdminLoginScreen />} />
           <Route path="admin/glo2go/dashboard/travellist" element={<TravelerList />} />
           <Route path="admin/glo2go/dashboard/travellist/travelerform" element={<TravelerForm />} />

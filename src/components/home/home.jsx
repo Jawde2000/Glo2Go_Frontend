@@ -1,7 +1,7 @@
 // src/components/HomePage.js
 import React from 'react';
 import { Container, Typography, List, ListItem, ListItemText } from '@mui/material';
-import BottomNavigationbar from './bottomnavigation';
+import BottomNavigationbar from './UserNavigation';
 import AttractionList from './attractionList';
 
 const attractions = [

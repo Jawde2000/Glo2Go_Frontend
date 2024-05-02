@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container, Typography, Paper, Avatar, TextField,
   Button, Grid, CssBaseline, Box, Link
@@ -7,6 +7,9 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AdminLogo from '../../../pictures/Glo2goLogo.png';
+import Cookies from 'js-cookie';
+import { Cookie } from '@mui/icons-material';
+import {useSelector} from 'react-redux'
 
 function AdminLoginScreen() {
   const [email, setEmail] = useState('');
@@ -15,9 +18,17 @@ function AdminLoginScreen() {
 
   axios.defaults.withCredentials = true;
 
+  useEffect(() => {
+    if (Cookies.get('token') && Cookies.get('admin')) {
+      navigate('/admin/glo2go/dashboard');
+    }
+  }, [navigate]);
+
   const handleAdminLogin = async (event) => {
     event.preventDefault();
     try {
+
+      console.log(password);
       const response = await axios.post('https://localhost:7262/api/authentication/admin/login', {
         email: email,
         password: password,
@@ -25,17 +36,27 @@ function AdminLoginScreen() {
 
       console.log(response.data);
 
-      if (response.data.isAdmin) {
-        alert(response.data.message);
-        navigate('/admin/glo2go/dashboard');  // Adjust this route as needed
+      if (response.data.flag) {
+        console.log("Enter")
+        Cookies.set('refreshToken', response.data.refreshToken, { sameSite: 'Strict', secure: true });
+        
+        // Convert the object to a string before storing it in cookies
+        Cookies.set('userinfo', JSON.stringify(response.data.data), { sameSite: 'Strict', secure: true });
+
+        Cookies.set('admin', true, { sameSite: 'Strict', secure: true });
+        Cookies.set('token', response.data.token, { sameSite: 'Strict', secure: true });
+        
+        alert(response.data.message); // Assuming message is directly under data
+        navigate("/admin/glo2go/dashboard");
       } else {
-        alert(response.data.message);
+        alert(response.data.message); // Assuming message is directly under data for consistency
       }
     } catch (error) {
       console.error("Admin login error:", error.response);
       alert("Login error: " + (error.response?.data?.message || error.message));
     }
-  };
+};
+
 
   return (
     <Container component="main">

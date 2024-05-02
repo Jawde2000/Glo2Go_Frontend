@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Container, useMediaQuery, useTheme } from '@mui/material';
 import BottomNavigation from '@mui/material/BottomNavigation';
 import BottomNavigationAction from '@mui/material/BottomNavigationAction';
@@ -12,10 +12,13 @@ import MenuIcon from '@mui/icons-material/Menu';
 import LogoutIcon from '@mui/icons-material/Logout';  
 import Cookies from 'js-cookie';
 import { useNavigate, Link } from 'react-router-dom';
-import Glo2Go from '../../pictures/Glo2goLogo2.png'
+import Glo2Go from '../../pictures/Glo2goLogo2.png';
+import {useSelector, useDispatch} from 'react-redux';
+import { logout } from '../../actions/userActions';
 const containerStyle = {
   position: 'relative',
 };
+
 
 const bottomNavStyle = {
   position: 'fixed',
@@ -24,18 +27,36 @@ const bottomNavStyle = {
   right: 0,
 };
 
-const BottomNavigationbar = () => {
+const UserNavigationbar = () => {
   const [value, setValue] = React.useState(0);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const userLogin = useSelector(state => state.userLogin)
+  const {userInfo} = userLogin;
+  const [isLogged, setLogged] = useState(false);
+
   const handleLogout = () => {
-    Cookies.remove('token');  
+    Cookies.remove('admin'); 
     Cookies.remove('refreshToken');
+    Cookies.remove('token');
+    Cookies.remove('userinfo');
+    dispatch(logout())
     navigate('/glo2go/login');  // Navigate back to the login screen 
   };
+
+  useEffect(() => {
+    console.log("User Info:", userInfo);
+    if (userInfo) {
+      setLogged(true);
+    } else {
+      setLogged(false);
+    }
+  }, [userInfo]);
+
 
     // Styles for links and icons
   const linkStyle = {
@@ -80,10 +101,13 @@ const BottomNavigationbar = () => {
                 </IconButton>
               ) : (
                 <>
-                  <Link to="/dash" style={linkStyle}>Home</Link>
+                  <Link to="/" style={linkStyle}>Home</Link>
                   <Link to="/calendar" style={linkStyle}>Schedule</Link>
-                  <Link to="/profile" style={linkStyle}>Profile</Link>
-                  <IconButton
+                  {userInfo? 
+                  <Link to="/profile" style={linkStyle}>Profile</Link> : 
+                  <Link to="/glo2go/login" style={linkStyle}>Login/Register</Link>
+                  }
+                  {userInfo? <IconButton
                     edge="end"
                     color="inherit"
                     aria-label="logout"
@@ -91,7 +115,7 @@ const BottomNavigationbar = () => {
                     style={iconButtonStyle}
                   >
                     <LogoutIcon />
-                  </IconButton>
+                  </IconButton> : null}
                 </>
               )}
             </Toolbar>
@@ -101,4 +125,4 @@ const BottomNavigationbar = () => {
       );
 }
 
-export default BottomNavigationbar;
+export default UserNavigationbar;
