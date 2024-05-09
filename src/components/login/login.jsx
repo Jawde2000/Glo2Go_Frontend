@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Container, Typography, Paper, Avatar, TextField, Button,
-  Grid, CssBaseline, Card, CardContent, Modal, CardMedia, Box, CircularProgress, CardActions
+  Grid, CssBaseline, Card, CardContent, Modal, CardMedia, Box, CircularProgress, CardActions, Rating
 } from "@mui/material";
 import { LockOutlined as LockOutlinedIcon, Star as StarIcon } from "@mui/icons-material";
 import { TransitionGroup } from 'react-transition-group';
@@ -14,6 +14,7 @@ function LoginScreen() {
   const [randomAttraction, setRandomAttraction] = useState(null);
   const [userReviews, setUserReviews] = useState([]);
   const [weather, setWeather] = useState(null);
+  const [backgroundImage, setBackgroundImage] = useState('');
 
   const upcomingEvents = [
     { name: "Music Festival", date: "2024-05-30", location: "Beach Resort" },
@@ -37,24 +38,43 @@ function LoginScreen() {
     { name: "Cityscape View", coords: { lat: 41.9, lon: 12.5 } },
   ];
 
+  const getRandomCountry = async () => {
+    const url = 'https://restcountries.com/v3.1/all';
+    const response = await fetch(url);
+    const data = await response.json();
+    const randomCountry = data[Math.floor(Math.random() * data.length)];
+    return randomCountry;
+  };
+
+  const getCapitalWeather = async (country) => {
+    const capital = country.capital[0]; // Capitals are in an array, taking the first
+    const apiKey = '8d9e7d33074f30d15e4fbc345efa073f';
+    const url = `http://api.openweathermap.org/geo/1.0/direct?q=${capital}&limit=1&appid=${apiKey}`;
+    const response = await fetch(url);
+    const [locationData] = await response.json();
+    return locationData;
+};
+
+const fetchWeather = async () => {
+  try {
+    const apiKey = '8d9e7d33074f30d15e4fbc345efa073f';
+    const country = await getRandomCountry();
+    const locationData = await getCapitalWeather(country);
+    const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${locationData.lat}&lon=${locationData.lon}&appid=${apiKey}&units=metric`;
+
+    const weatherResponse = await fetch(weatherUrl);
+    const weatherData = await weatherResponse.json();
+    setWeather({ ...weatherData, location: country.name.common, capital: country.capital[0] }); // Using common name of the country
+    const imageUrl = await fetchImage(country.capital[0]);
+    setBackgroundImage(imageUrl);
+  } catch (error) {
+    console.error("Error fetching weather data:", error);
+  } finally {
+    setLoading(false);
+  }
+  };
+
   useEffect(() => {
-    const fetchWeather = async () => {
-      const randomIndex = Math.floor(Math.random() * locationSuggestion.length);
-      const location = locationSuggestion[randomIndex];
-      const apiKey = '8d9e7d33074f30d15e4fbc345efa073f'; // Replace with your OpenWeatherMap API key
-      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${location.coords.lat}&lon=${location.coords.lon}&appid=${apiKey}&units=metric`;
-
-      try {
-        const response = await fetch(url);
-        const data = await response.json();
-        setWeather({ ...data, location: location.name });
-      } catch (error) {
-        console.error("Error fetching weather data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchWeather();
   }, []);
 
@@ -73,7 +93,7 @@ function LoginScreen() {
         .then(response => response.json())
         .then(data => {
           setUserReviews(data.map(review => ({
-            username: review.travelerEmail.split('@')[0] + '...@' + review.travelerEmail.split('@')[1], // Masks the email
+            username: review.travelerEmail.split('@')[0], // Masks the email
             rating: review.reviewRating,
             comment: review.reviewTraveler
           })));
@@ -92,6 +112,14 @@ function LoginScreen() {
       </Box>
     );
   }
+
+  const fetchImage = async (location) => {
+    const url = `https://api.unsplash.com/search/photos?page=1&query=${location}&client_id=X2qP9e7hrOqy05MiE6DFay0F7BDtWwGrcNYU4CzIV3U`;
+    const response = await fetch(url);
+    const data = await response.json();
+    return data.results[0].urls.regular;  // Take the first image's regular size URL
+  };
+
 
   return (
     <Container component="main" maxWidth="md">
@@ -113,28 +141,39 @@ function LoginScreen() {
           <Grid container spacing={2} sx={{ mt: 2 }}>
             {userReviews.map((review, index) => (
               <Grid item xs={12} sm={4} key={index}>
-                <Card style={{ height: '200px' }}>
-                  <CardContent style={{ overflow: 'hidden', maxHeight: '100px' }}>
-                    <Avatar sx={{ bgcolor: 'primary.main', mb: 1 }}>{review.username[0]}</Avatar>
-                    <Typography variant="body2" color="text.secondary">{review.comment}</Typography>
-                    <Typography variant="body2" color="text.secondary"><StarIcon sx={{ color: '#FFD700', mr: 0.5 }} />{review.rating}</Typography>
-                    <Typography variant="body2" color="text.secondary">{review.comment}</Typography>
+                <Card sx={{ height: '200px' }}>
+                  <CardContent sx={{ overflow: 'hidden', maxHeight: '300px' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 1 }}>
+                      <Avatar sx={{ bgcolor: 'primary.main', marginRight: 1 }}>
+                        {review.username[0]}
+                      </Avatar>
+                      <Typography variant="body2" color="text.secondary" noWrap>
+                        {review.username}
+                      </Typography>
+                    </Box>
+                    <Rating name="read-only" value={review.rating} readOnly />
+                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'justify' }}>
+                      {review.comment}
+                    </Typography>
                   </CardContent>
                 </Card>
               </Grid>
             ))}
           </Grid>
           <Grid>
-            <Paper elevation={6} sx={{ my: 4, p: 3 }}>
-              <Typography variant="h5">Weather Info</Typography>
+          <Paper elevation={6} sx={{ my: 4, p: 3, backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover' }}>
+            <Box sx={{ p: 2, backgroundColor: 'rgba(0, 0, 0, 0.5)', borderRadius: '8px' }}>
               {weather && (
-                <Box sx={{ mt: 2 }}>
+                <>
+                  <Typography variant="h5" gutterBottom>Weather Info</Typography>
                   <Typography variant="h6">Location: {weather.location}</Typography>
+                  <Typography>Region: {weather.capital}</Typography>
                   <Typography>Temperature: {weather.main.temp}°C</Typography>
                   <Typography>Description: {weather.weather[0].description}</Typography>
-                </Box>
+                </>
               )}
-            </Paper>
+            </Box>
+          </Paper>
           </Grid>
           <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>Explore Popular Locations</Typography>
           <Grid container spacing={2}>
@@ -146,27 +185,28 @@ function LoginScreen() {
             ))}
           </Grid>
           {randomAttraction && (
-              <Box sx={{ mt: 4, width: '100%' }}>
-                  <Typography variant="h6" sx={{ mb: 2 }}>Featured Attraction</Typography>
-                  <Card>
-                      <CardMedia
-                          component="img"
-                          height="140"
-                          image={randomAttraction.sitePics && randomAttraction.sitePics.length > 0 ? randomAttraction.sitePics[0] : '/static/images/placeholder.jpg'}
-                          alt={randomAttraction.siteName}
-                      />
-                      <CardContent>
-                          <Typography gutterBottom variant="h6" component="div">{randomAttraction.siteName}</Typography>
-                          <Typography variant="body2" color="text.secondary">{randomAttraction.siteDesc}</Typography>
-                      </CardContent>
-                      <CardActions style={{ justifyContent: 'center' }}>
-                        <Button size="small" color="primary" component={Link} to="/glo2go/AttractionsList">
-                            View More
-                        </Button>
-                      </CardActions>
-                  </Card>
-              </Box>
-          )}
+            <Box sx={{ mt: 4, width: '100%' }}>
+                <Typography variant="h6" sx={{ mb: 2 }}>Featured Attraction</Typography>
+                <Card>
+                    <CardMedia
+                        component="img"
+                        height="140"
+                        image={randomAttraction.sitePics && randomAttraction.sitePics.length > 0 ? randomAttraction.sitePics[0] : '/static/images/placeholder.jpg'}
+                        alt={randomAttraction.siteName}
+                    />
+                    <CardContent>
+                        <Typography gutterBottom variant="h6" component="div">{randomAttraction.siteName}</Typography>
+                        <Typography variant="body2" color="text.secondary">{randomAttraction.siteDesc}</Typography>
+                    </CardContent>
+                    <CardActions style={{ justifyContent: 'center' }}>
+                      <Button size="small" color="primary" component={Link} to="/glo2go/AttractionsList">
+                          View More
+                      </Button>
+                    </CardActions>
+                </Card>
+            </Box>
+        )}
+        
           <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>Upcoming Events</Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             {upcomingEvents.map((event, index) => (
