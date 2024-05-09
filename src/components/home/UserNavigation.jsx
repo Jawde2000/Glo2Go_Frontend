@@ -133,7 +133,7 @@ const UserNavigationbar = () => {
               ) : (
                 <>
                   <Link to="/" style={linkStyle}>Home</Link>
-                  <Link to="/calendar" style={linkStyle}>Schedule</Link>
+                  {userInfo? <Link to="/calendar" style={linkStyle}>Schedule</Link> : null}
                   {userInfo? 
                   <div>
                   <Button 

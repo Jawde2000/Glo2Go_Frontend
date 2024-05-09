@@ -161,18 +161,15 @@ const fetchWeather = async () => {
             ))}
           </Grid>
           <Grid>
-          <Paper elevation={6} sx={{ my: 4, p: 3, backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover' }}>
-            <Box sx={{ p: 2, backgroundColor: 'rgba(0, 0, 0, 0.5)', borderRadius: '8px' }}>
-              {weather && (
-                <>
-                  <Typography variant="h5" gutterBottom>Weather Info</Typography>
-                  <Typography variant="h6">Location: {weather.location}</Typography>
-                  <Typography>Region: {weather.capital}</Typography>
-                  <Typography>Temperature: {weather.main.temp}°C</Typography>
-                  <Typography>Description: {weather.weather[0].description}</Typography>
-                </>
-              )}
-            </Box>
+          <Paper elevation={6} sx={{ my: 4, p: 3, backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}> 
+            <Box sx={{ p: 2, backgroundColor: 'rgba(0, 0, 0, 0.5)', borderRadius: '8px' }}> 
+              {weather && ( <> <Typography variant="h5" gutterBottom color="white">Weather Info</Typography> 
+              <Typography variant="h6" color="white">Country: {weather.location}</Typography> 
+              <Typography variant="body1" color="white">Region: {weather.capital}</Typography> 
+              <Typography variant="h4" color="white">Temperature: {weather.main.temp}°C</Typography> 
+              <Typography variant="body1" color="white">{weather.weather[0].description}</Typography> 
+              </> )} 
+            </Box> 
           </Paper>
           </Grid>
           <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>Explore Popular Locations</Typography>

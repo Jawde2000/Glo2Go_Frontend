@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Card, CardMedia, CardContent, Typography, CircularProgress, Box } from '@mui/material';
+import { Card, CardMedia, CardContent, Typography, CircularProgress, Box, IconButton } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 function SiteDetails() {
   const { siteId } = useParams();
   const [site, setSite] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSite = async () => {
@@ -39,6 +42,9 @@ function SiteDetails() {
 
   return (
     <Box sx={{ mb: 4 }}>  {/* Adds margin bottom to the whole component */}
+      <IconButton onClick={() => navigate(-1)} sx={{ mb: 2 }}> {/* Navigation back button */}
+        <ArrowBackIcon />
+      </IconButton>
       <Card raised elevation={6}>
         <CardMedia
           component="img"

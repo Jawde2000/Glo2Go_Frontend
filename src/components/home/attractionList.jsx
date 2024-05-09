@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Card, CardMedia, CardContent, CardActions, Typography,
-  Button, Container, Grid, CircularProgress, Alert, TablePagination
+  Button, Container, Grid, CircularProgress, Alert, TablePagination, IconButton
 } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { useNavigate } from 'react-router-dom';
 
 function AttractionsList() {
   const [sites, setSites] = useState([]);
@@ -11,7 +13,8 @@ function AttractionsList() {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(6);  // Customize based on your layout
-
+  const navigate = useNavigate();
+  
   const truncate = (text, length = 100) => {
     if (text.length > length) {
       return text.substring(0, length) + '...';
@@ -55,6 +58,9 @@ function AttractionsList() {
 
   return (
     <Container maxWidth="lg">
+      <IconButton onClick={() => navigate(-1)} sx={{ mb: 2 }}> {/* Navigation back button */}
+        <ArrowBackIcon />
+      </IconButton>
       <Typography variant="h4" component="h1" gutterBottom sx={{ marginTop: 4, marginBottom: 2 }}>
         Sites
       </Typography>
