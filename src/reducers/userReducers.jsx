@@ -19,6 +19,13 @@ import {
     USER_REGISTER_SUCCESS,
     USER_REGISTER_FAIL,
     USER_REGISTER_RESET,
+
+    CHECK_TOKENVALIDATION_REQUEST,
+    CHECK_TOKENVALIDATION_SUCCESS,
+    CHECK_TOKENVALIDATION_FAIL,
+    CHECK_TOKENVALIDATION_RESET,
+
+
 } from '../constants/userConstants'
 
 export const userLoginReducer = (state = { }, action) => {
@@ -27,7 +34,7 @@ export const userLoginReducer = (state = { }, action) => {
             return {loading: true}
         
         case USER_LOGIN_SUCCESS:
-           return {loading: false, userInfo: action.payload, admin: action.payload, token: action.payload, refreshToken: action.payload}
+           return {loading: false, userInfo: action.payload.data, token: action.payload.token, refreshToken: action.payload.refreshToken}
         
         case USER_LOGIN_FAIL:
            return {loading: false, error: action.payload}
@@ -72,6 +79,25 @@ export const userDeleteReducer = (state = { }, action) => {
         
         case USER_DELETE_RESET:
             return {}
+
+        default:
+            return state
+    }
+}
+
+export const tokenValidationReducer = (state = { }, action) => {
+    switch(action.type){
+        case CHECK_TOKENVALIDATION_REQUEST:
+            return {loading: true}
+        
+        case CHECK_TOKENVALIDATION_SUCCESS:
+           return {loading: false, isValid: action.payload}
+        
+        case CHECK_TOKENVALIDATION_FAIL:
+           return {loading: false, error: action.payload}
+
+        case CHECK_TOKENVALIDATION_RESET:
+           return {}
 
         default:
             return state

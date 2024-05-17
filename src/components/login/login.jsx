@@ -6,6 +6,10 @@ import {
 import { LockOutlined as LockOutlinedIcon, Star as StarIcon } from "@mui/icons-material";
 import { TransitionGroup } from 'react-transition-group';
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { checkValidToken, logout } from '../../actions/userActions';
+import {useSelector, useDispatch} from 'react-redux';
+import Cookies from 'js-cookie';
 
 function LoginScreen() {
   const [openAddTrip, setOpenAddTrip] = useState(false);
@@ -15,6 +19,21 @@ function LoginScreen() {
   const [userReviews, setUserReviews] = useState([]);
   const [weather, setWeather] = useState(null);
   const [backgroundImage, setBackgroundImage] = useState('');
+
+  const tokenValidation = useSelector(state => state.tokenValidation)
+  const {isValid} = tokenValidation;
+  const dispatch = useDispatch();
+  const token = Cookies.get('token');
+
+  useEffect(() => {
+    if (token) {
+      console.log(token);
+      console.log("token exist, validate token now...")
+      dispatch(checkValidToken(token));
+    }
+
+  }, [token, isValid])
+  
 
   const upcomingEvents = [
     { name: "Music Festival", date: "2024-05-30", location: "Beach Resort" },

@@ -81,10 +81,6 @@ const UserNavigationbar = () => {
   }, [open]);
 
   const handleLogout = () => {
-    Cookies.remove('admin'); 
-    Cookies.remove('refreshToken');
-    Cookies.remove('token');
-    Cookies.remove('userinfo');
     dispatch(logout())
     navigate('/glo2go/login');  // Navigate back to the login screen 
   };

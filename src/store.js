@@ -4,10 +4,11 @@ import storage from 'redux-persist/lib/storage'; // defaults to localStorage for
 import { thunk } from 'redux-thunk';
 import { composeWithDevTools } from 'redux-devtools-extension';
 import Cookies from 'js-cookie';
-import { userLoginReducer } from './reducers/userReducers';
+import { userLoginReducer, tokenValidationReducer } from './reducers/userReducers';
 
 const reducer = combineReducers({
     userLogin: userLoginReducer,
+    tokenValidation: tokenValidationReducer,
 });
 
 const persistConfig = {

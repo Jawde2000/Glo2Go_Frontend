@@ -31,6 +31,7 @@ import ViewSite from './components/site/Site/ViewSite.jsx';
 import { ColorModeContext, useMode } from '../src/theme.jsx';
 import { styled, useTheme } from '@mui/material/styles';
 import {useSelector} from 'react-redux';
+import ProfileForm from './components/login/ProfileForm.jsx';
 
 const drawerWidth = 300;
 
@@ -64,13 +65,14 @@ function App() {
   const [isAdmin, setAdmin] = useState("");
 
   const userLogin = useSelector(state => state.userLogin)
-  const {userInfo, admin} = userLogin;
+  const {userInfo, token, refreshToken, admin} = userLogin;
 
   useEffect(() => {
     console.log(userInfo);
-    console.log(admin);
+    console.log(token);
+    console.log(refreshToken);
     // Additional logic to handle user state changes
-  }, [userInfo, admin, userLogin]); // Dependency array includes userInfo and admin
+  }, [userInfo, token, admin, refreshToken, userLogin]); // Dependency array includes userInfo and admin
 
   return (
     <CookiesProvider>
@@ -80,6 +82,7 @@ function App() {
       {userInfo && admin === "true"? <SideBar open={open} handleDrawerOpen={handleDrawerOpen} handleDrawerClose={handleDrawerClose} /> : null}
         <Routes>
           <Route path="/" element={<Navigate replace to="/glo2go/home" />} />
+          <Route path='/glo2go/profile' element={<ProfileForm />} />
           <Route path="home" element={<Home />} />
           <Route path="review" element={<UserReviewScreen />} />
           <Route path="glo2go/home" element={<LoginScreen />} />
