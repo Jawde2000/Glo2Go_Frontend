@@ -50,6 +50,7 @@ const UserNavigationbar = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const token = Cookies.get('token');
 
   const handleToggle = () => {
     setOpen((prevOpen) => !prevOpen);
@@ -81,7 +82,7 @@ const UserNavigationbar = () => {
   }, [open]);
 
   const handleLogout = () => {
-    dispatch(logout())
+    dispatch(logout(token))
     navigate('/glo2go/login');  // Navigate back to the login screen 
   };
 

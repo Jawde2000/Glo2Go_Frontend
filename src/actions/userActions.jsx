@@ -13,17 +13,22 @@ import {
 } from '../constants/userConstants';
 import Cookies from 'js-cookie';
 
-export const logout = () => (dispatch) => {
+export const logout = (token) => async (dispatch) => {
   Cookies.remove('admin'); 
   Cookies.remove('refreshToken');
   Cookies.remove('token');
   Cookies.remove('userinfo');
+  const response = await axios.post('https://localhost:7262/api/Authentication/check-token-validation', {
+    token: token
+  })
+
+  Cookies.set('token', response.data.token, { sameSite: 'Strict', secure: true });
+
   dispatch({type: USER_LOGOUT});
 }
 
 export const checkValidToken = (token) => async (dispatch) => {
   dispatch({type: CHECK_TOKENVALIDATION_REQUEST});
-
   const response = await axios.post('https://localhost:7262/api/Authentication/check-token-validation', {
     token: token
   })
@@ -37,7 +42,18 @@ export const checkValidToken = (token) => async (dispatch) => {
     });
   } else {
     console.log("log out - token is not valid");
-    dispatch(logout());
+    const refresh = Cookies.get('refreshToken');
+    const response = await axios.post('https://localhost:7262/api/Authentication/refresh-token', {
+      Token: refresh
+    })
+
+    console.log(response);
+    Cookies.set('refreshToken', response.data.refreshToken, { sameSite: 'Strict', secure: true });
+    Cookies.set('userinfo', JSON.stringify(response.data.data), { sameSite: 'Strict', secure: true }); 
+    Cookies.set('token', response.data.token, { sameSite: 'Strict', secure: true });
+
+
+    dispatch(logout(token));
   }
 }
 
