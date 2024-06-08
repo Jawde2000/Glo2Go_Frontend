@@ -1,74 +1,174 @@
-import React, { useState } from 'react';
-import { TextField, Button, Typography, Paper, Grid } from '@material-ui/core';
+import React, { useState, useEffect } from "react";
+import { TextField, Button, Paper, Divider, Grid, MenuItem } from '@material-ui/core';
+import { Typography } from "@mui/material";
+import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
+import { Loader } from "../../commons/Loader/Loader";
+import { useSelector, useDispatch } from 'react-redux';
+import { createTimeline } from '../../../actions/timelinesActions';
+import { TIMELINE_CREATE_RESET } from '../../../constants/timelineConstants';
+import countryData from './country.json'; // Import your local country.json file
+import axios from 'axios';
 
-function NewTimelines() {
-  const [entries, setEntries] = useState([]);
+const NewTimelines = () => {
   const [title, setTitle] = useState('');
-  const [country, setCountry] = useState('');
-  const [region, setRegion] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [country, setCountry] = useState('');
+  const [region, setRegion] = useState('');
+  const [countries, setCountries] = useState([]);
+  const [regions, setRegions] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const timelineCreate = useSelector(state => state.timelineCreate);
+  const { success, timeline } = timelineCreate;
 
   const handleCancel = () => {
-    // Implement the logic for adding a new plan here
-    navigate("/travelplans");
+    navigate("/glo2glo/travelplans");
   };
 
-  const newTimeline = () => {
-    // Implement logic for new timeline
-  }
+  useEffect(() => {
+    if (success) {
+      alert(timeline.message);
+      dispatch({ type: TIMELINE_CREATE_RESET });
+      navigate("/glo2glo/travelplans");
+    }
+  }, [navigate, success]);
+
+  useEffect(() => {
+    // Use the imported country data
+    const formattedCountryData = countryData.map(country => ({
+      name: country.name.common,
+      code: country.cca2,
+    })).sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
+    setCountries(formattedCountryData);
+  }, []);
+
+  useEffect(() => {
+    // Fetch regions when the country changes
+    const fetchRegions = async (countryCode) => {
+      try {
+        const response = await axios.get(`https://api.worldbank.org/v2/country/${countryCode}/region?format=json`);
+        console.log(response.data); // Log the response data
+        setRegions(response.data[1]);
+      } catch (error) {
+        console.error('Error fetching regions:', error);
+        setRegions([]);
+      }
+    };    
+
+    if (country) {
+      fetchRegions(country);
+    }
+  }, [country]);
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      dispatch(createTimeline(title, startDate, endDate, country, region));
+    } catch (error) {
+      console.error('Error creating timeline:', error);
+      enqueueSnackbar('Network error. Please try again later.', { variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCountryChange = (e) => {
+    const inputCountry = e.target.value;
+    if (countries.find(country => country.name === inputCountry)) {
+      setCountry(inputCountry);
+    } else {
+      setCountry('');
+    }
+  };
 
   return (
-    <div style={{ padding: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <Typography variant="h6">New Timeline</Typography>
-      </div>
-      <Paper elevation={3} style={{ padding: 16 }}>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Paper elevation={3} style={{ padding: 16, width: 300 }}>
+        {loading && <Loader />}
+        <Typography
+          variant="h5"
+          sx={{
+            fontSize: '1rem',
+            fontStyle: 'italic',
+            fontFamily: 'Cursive',
+            color: 'deepPurple',
+            textAlign: 'center',
+          }}
+        >
+          Create a new timeline for your journey!
+        </Typography>
         <TextField
           label="Timeline Title"
           fullWidth
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          margin="normal"
         />
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <TextField
-              label="Country"
-              fullWidth
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-            />
-          </Grid>
-        </Grid>
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <TextField
-              type="date"
-              label="Start Date"
-              InputLabelProps={{ shrink: true }}
-              fullWidth
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              type="date"
-              label="End Date"
-              InputLabelProps={{ shrink: true }}
-              fullWidth
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
+        <TextField
+          type="date"
+          label="Start Date"
+          InputLabelProps={{ shrink: true }}
+          fullWidth
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          margin="normal"
+        />
+        <TextField
+          type="date"
+          label="End Date"
+          InputLabelProps={{ shrink: true }}
+          fullWidth
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          margin="normal"
+        />
+        <TextField
+          select
+          label="Country"
+          fullWidth
+          value={country}
+          onChange={handleCountryChange}
+          margin="normal"
+        >
+          {countries.map((country) => (
+            <MenuItem key={country.code} value={country.name}>
+              {country.name}
+            </MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          label="Region"
+          fullWidth
+          value={regions}
+          onChange={(e) => setRegion(e.target.value)}
+          margin="normal"
+          disabled={!country}
+        />
+        <Grid container alignItems="center" style={{ margin: '20px 0' }}>
+          <Grid item xs>
+            <Divider />
           </Grid>
         </Grid>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
-          <Button variant="outlined" color="secondary" onClick={handleCancel}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={handleCancel}
+            disabled={loading}
+          >
             Cancel
           </Button>
-          <Button variant="contained" color="primary" onClick={newTimeline}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSave}
+            disabled={loading || !title || !startDate || !endDate || !country || !region}
+          >
             Save
           </Button>
         </div>
@@ -78,3 +178,4 @@ function NewTimelines() {
 };
 
 export default NewTimelines;
+

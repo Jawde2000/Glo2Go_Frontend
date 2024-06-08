@@ -5,10 +5,15 @@ import { thunk } from 'redux-thunk';
 import { composeWithDevTools } from 'redux-devtools-extension';
 import Cookies from 'js-cookie';
 import { userLoginReducer, tokenValidationReducer } from './reducers/userReducers';
+import { timelineCreateReducer, timelineDeleteReducer, timelineUpdateReducer, timelineListReducer } from './reducers/timelineReducers';
 
 const reducer = combineReducers({
     userLogin: userLoginReducer,
     tokenValidation: tokenValidationReducer,
+    timelineCreate: timelineCreateReducer, 
+    timelineDelete: timelineDeleteReducer,
+    timelineUpdate: timelineUpdateReducer,
+    timelineList: timelineListReducer,
 });
 
 const persistConfig = {

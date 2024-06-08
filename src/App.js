@@ -23,7 +23,7 @@ import TravelerDetails from './components/Admin/UserManagement/TravelerDetails';
 import AttractionsList from './components/home/attractionList';
 import Footer from './components/home/Footer';
 import SiteDetails from './components/home/SiteDetails';
-import UserProfile from './components/home/UserProfile';
+// import UserProfile from './components/home/UserProfile';
 import Dashboard from './components/Admin/dashboard/Dashboard';
 import SideBar from './components/Admin/dashboard/Sidebar';
 import Topbar from './components/Admin/dashboard/Topbar.jsx';
@@ -31,7 +31,10 @@ import ViewSite from './components/site/Site/ViewSite.jsx';
 import { ColorModeContext, useMode } from '../src/theme.jsx';
 import { styled, useTheme } from '@mui/material/styles';
 import {useSelector} from 'react-redux';
-import ProfileForm from './components/login/ProfileForm.jsx';
+import HotelList from './components/Hotel/HotelBooking.jsx';
+import UserProfile from './components/UserProfile/UserProfile.jsx';
+import UpdateTimeline from './components/timelines/travelplans/updateTravelPlans.jsx';
+import Timetable from './components/timelines/travelplans/Timetable.jsx';
 
 const drawerWidth = 300;
 
@@ -55,16 +58,11 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
 );
 
 function App() {
-  const [isLogged, setLogged] = useState(false);
-  const [theme, colorMode] = useMode();
   const [open, setOpen] = useState(false);
 
   const handleDrawerOpen = () => setOpen(true);
   const handleDrawerClose = () => setOpen(false);
-
-  const [isAdmin, setAdmin] = useState("");
-
-  const userLogin = useSelector(state => state.userLogin)
+  const userLogin = useSelector(state => state.userLogin);
   const {userInfo, token, refreshToken, admin} = userLogin;
 
   useEffect(() => {
@@ -82,13 +80,14 @@ function App() {
       {userInfo && admin === "true"? <SideBar open={open} handleDrawerOpen={handleDrawerOpen} handleDrawerClose={handleDrawerClose} /> : null}
         <Routes>
           <Route path="/" element={<Navigate replace to="/glo2go/home" />} />
-          <Route path='/glo2go/profile' element={<ProfileForm />} />
+          {/* <Route path='/glo2go/profile' element={<ProfileForm />} /> */}
           <Route path="home" element={<Home />} />
           <Route path="review" element={<UserReviewScreen />} />
           <Route path="glo2go/home" element={<LoginScreen />} />
+          <Route path="glo2go/hotel" element={<HotelList />} />
           <Route path="forgotpassword" element={<ForgotPasswordScreen />} />
-          <Route path="travelplans" element={<TravelPlanDisplay />} />
-          <Route path="newtimeline" element={<NewTimelines />} />
+          <Route path="glo2glo/travelplans" element={<TravelPlanDisplay />} />
+          <Route path="glo2go/travelplans/newtimeline" element={<NewTimelines />} />
           <Route path="glo2go/signup" element={<SignUp />} />
           <Route path="glo2go/login" element={<LoginUserScreen />} />
           <Route path="glo2go/reset-password" element={<ResetPassword />} />
@@ -104,6 +103,8 @@ function App() {
           <Route path='glo2go/AttractionsList' element={<AttractionsList />} />
           <Route path="glo2go/AttractionsList/:siteId" element={<SiteDetails />} />
           <Route path="glo2go/userprofile" element={<UserProfile />} />
+          <Route path="glo2go/travelplans/timetable/:timetableID/:startDate/:endDate/:country/:region/:timelineTitle" element={<Timetable />} />
+          <Route path="glo2go/travelplans/edit/:tableId" element={<UpdateTimeline/>} />
           {/* Include any other routes here */}
         </Routes>
         <Footer />

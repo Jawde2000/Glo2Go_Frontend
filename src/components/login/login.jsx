@@ -29,10 +29,10 @@ function LoginScreen() {
     if (token) {
       console.log(token);
       console.log("token exist, validate token now...")
-      dispatch(checkValidToken(token));
+      dispatch(checkValidToken());
     }
 
-  }, [token, isValid])
+  }, [token])
   
 
   const upcomingEvents = [
@@ -114,7 +114,8 @@ const fetchWeather = async () => {
           setUserReviews(data.map(review => ({
             username: review.travelerEmail.split('@')[0], // Masks the email
             rating: review.reviewRating,
-            comment: review.reviewTraveler
+            comment: review.reviewTraveler,
+            site: review.reviewSite
           })));
         })
         .catch(error => console.error("Error fetching reviews:", error))
@@ -146,7 +147,7 @@ const fetchWeather = async () => {
       <Paper elevation={6} sx={{ my: 4, p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Typography component="h1" variant="h5">Welcome back</Typography>
         <form sx={{ width: '100%', mt: 1 }}>
-          <Button fullWidth variant="contained" color="primary" sx={{ mt: 3, mb: 2 }} onClick={handleOpenAddTrip}>Add Trip</Button>
+          <Button fullWidth variant="contained" color="primary" sx={{ mt: 3, mb: 2 }} onClick={handleOpenAddTrip}>Adventure awaits! Add a trip</Button>
           <Modal open={openAddTrip} onClose={handleCloseAddTrip} aria-labelledby="modal-modal-title" aria-describedby="modal-modal-description">
             <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4 }}>
               <Typography id="modal-modal-title" variant="h6" component="h2">Add a New Trip</Typography>
@@ -159,7 +160,7 @@ const fetchWeather = async () => {
           </Modal>
           <Grid container spacing={2} sx={{ mt: 2 }}>
             {userReviews.map((review, index) => (
-              <Grid item xs={12} sm={4} key={index}>
+              <Grid item xs={12} sm={4} key={index} component={Link} to={"/glo2go/AttractionsList/" + review.site} sx={{ textDecoration: 'none' }}>
                 <Card sx={{ height: '200px' }}>
                   <CardContent sx={{ overflow: 'hidden', maxHeight: '300px' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 1 }}>

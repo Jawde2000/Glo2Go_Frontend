@@ -111,9 +111,9 @@ const UserNavigationbar = () => {
           }}
           style={bottomNavStyle}
         >
-          <BottomNavigationAction label="Home" icon={<HomeIcon />} />
-          <BottomNavigationAction label="Timelines" icon={<CalendarMonthIcon />} />
-          <BottomNavigationAction label="Account" icon={<PersonIcon />} />
+          <BottomNavigationAction component={Link} label="Home" icon={<HomeIcon />} to="/"/>
+          <BottomNavigationAction component={Link} label="Timelines" icon={<CalendarMonthIcon />} to="/glo2glo/travelplans"/>
+          <BottomNavigationAction component={Link} label="Account" icon={<PersonIcon />} />
         </BottomNavigation>
       ) : (
       <AppBar position="static" style={{ backgroundColor: '#FFF', color: '#333' }}>
@@ -130,7 +130,8 @@ const UserNavigationbar = () => {
               ) : (
                 <>
                   <Link to="/" style={linkStyle}>Home</Link>
-                  {userInfo? <Link to="/calendar" style={linkStyle}>Schedule</Link> : null}
+                  {/* <Link to="/glo2go/hotel" style={linkStyle}>Hotel</Link> */}
+                  {userInfo? <Link to="/glo2glo/travelplans" style={linkStyle}>Schedule</Link> : null}
                   {userInfo? 
                   <div>
                   <Button 
