@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Scheduler } from '@aldabil/react-scheduler';
 import {
-  Button, Modal, Box, Typography, Table, TableBody, TableCell, TableHead, TableRow, IconButton, Grid, TextField
+  Button, Modal, Box, Typography, Table, TableBody, TableCell, TableHead, TableRow, IconButton, 
+  Grid, TextField, DialogActions, MenuItem, Dialog, DialogContent, DialogTitle
 } from '@mui/material';
 import { ArrowBack, ArrowForward } from '@mui/icons-material';
 import axios from 'axios';
@@ -10,8 +11,40 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useDispatch, useSelector } from 'react-redux';
 import { createEvent, updateEvent, deleteEvent, fetchEvents } from '../../../actions/eventActions';
 import Cookies from 'js-cookie';
-import { EVENT_CREATE_RESET } from '../../../constants/eventConstants';
+import { EVENT_CREATE_RESET, EVENT_DELETE_RESET } from '../../../constants/eventConstants';
+import {APILoader, PlacePicker} from '@googlemaps/extended-component-library/react';
 
+const eventTypes = [
+  { id: 1, type: 'Business Trip' },
+  { id: 2, type: 'Leisure Travel' },
+  { id: 3, type: 'Adventure/Sport' },
+  { id: 4, type: 'Cultural Exploration' },
+  { id: 5, type: 'Sightseeing' },
+  { id: 6, type: 'Hiking/Trekking' },
+  { id: 7, type: 'Beach Vacation' },
+  { id: 8, type: 'Shopping Trip' },
+  { id: 9, type: 'Food and Culinary Experience' },
+  { id: 10, type: 'Wellness and Spa Retreat' },
+  { id: 11, type: 'Educational Travel/Activities' },
+  { id: 12, type: 'Volunteer/Community Service Trip' },
+  { id: 13, type: 'Family Vacation' },
+  { id: 14, type: 'Romantic Getaway' },
+  { id: 15, type: 'Wildlife and Nature Exploration' },
+];
+
+const formatDateForInput = (date) => {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
+
+// GooglePlacesTextField component for region auto-complete
 const GooglePlacesTextField = ({ label, value, onChange }) => {
   const textFieldRef = useRef(null);
 
@@ -38,7 +71,7 @@ const GooglePlacesTextField = ({ label, value, onChange }) => {
       handleScriptLoad();
     } else {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCIQigHVKYc2ApZ2aTgQlomiSmC4_No-nYY&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDdbmFHVm1rLhycizZCHZxquaMwcT2phXM&libraries=places`;
       script.async = true;
       script.onload = handleScriptLoad;
       document.head.appendChild(script);
@@ -54,6 +87,160 @@ const GooglePlacesTextField = ({ label, value, onChange }) => {
       value={value}
       onChange={e => onChange(e.target.value)}
     />
+  );
+};
+
+const CustomEditor = ({ scheduler, onCreateEvent, onUpdateEvent, onDeleteEvent }) => {
+  const event = scheduler.edited;
+  const start = event ? formatDateForInput(event.start) : formatDateForInput(scheduler.state.start.value);
+  const end = event ? formatDateForInput(event.end) : formatDateForInput(scheduler.state.end.value);
+  console.log(start, end);
+
+  const [state, setState] = useState({
+    title: event?.title || "",
+    description: event?.description || "",
+    region: event?.region || "",
+    start: start,
+    end: end,
+    eventType: event?.event_type || ""
+  });
+
+  console.log(state.start, state.end);
+
+
+  const [error, setError] = useState("");
+
+  const handleChange = (value, name) => {
+    setState((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (state.title.length < 3) {
+      return setError("Min 3 letters");
+    }
+
+    try {
+      scheduler.loading(true);
+
+      const added_updated_event = {
+        event_id: event?.event_id,
+        title: state.title,
+        start: new Date(state.start),
+        end: new Date(state.end),
+        description: state.description,
+        region: state.region,
+        event_type: state.eventType
+      };
+
+      if (event) {
+        await onUpdateEvent(added_updated_event);
+        scheduler.onConfirm(added_updated_event, "edit");
+      } else {
+        await onCreateEvent(added_updated_event);
+        scheduler.onConfirm(added_updated_event, "create");
+      }
+
+      scheduler.close();
+    } finally {
+      scheduler.loading(false);
+    }
+  };
+
+  return (
+    <Dialog open={true} onClose={scheduler.close} fullWidth maxWidth="sm">
+      <DialogTitle>{event ? "Edit Event" : "Add Event"}</DialogTitle>
+      <DialogContent>
+        <form onSubmit={handleSubmit} noValidate>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                variant="outlined"
+                margin="normal"
+                required
+                fullWidth
+                label="Title"
+                value={state.title}
+                onChange={(e) => handleChange(e.target.value, "title")}
+                error={!!error}
+                helperText={error}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                variant="outlined"
+                margin="normal"
+                fullWidth
+                label="Description"
+                value={state.description}
+                onChange={(e) => handleChange(e.target.value, "description")}
+                multiline
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <GooglePlacesTextField
+                label="Region"
+                value={state.region}
+                onChange={(value) => handleChange(value, "region")}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                variant="outlined"
+                margin="normal"
+                fullWidth
+                label="Start Time"
+                type="datetime-local"
+                value={state.start}
+                onChange={(e) => handleChange(e.target.value, "start")}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                variant="outlined"
+                margin="normal"
+                fullWidth
+                label="End Time"
+                type="datetime-local"
+                value={state.end}
+                onChange={(e) => handleChange(e.target.value, "end")}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                select
+                variant="outlined"
+                margin="normal"
+                fullWidth
+                label="Event Type"
+                value={state.eventType}
+                onChange={(e) => handleChange(e.target.value, "eventType")}
+              >
+                {eventTypes.map((option) => (
+                  <MenuItem key={option.id} value={option.id}>
+                    {option.type}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+          </Grid>
+        </form>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={scheduler.close}>Cancel</Button>
+        <Button onClick={handleSubmit} type="submit">Confirm</Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 
@@ -73,28 +260,12 @@ const Timetable = () => {
   const itemsPerPage = 5;
   const eventGet = useSelector(state => state.eventGet);
   const eventCreate = useSelector(state => state.eventCreate);
+  const eventDelete = useSelector(state => state.eventDelete);
   const { loading, events } = eventGet;
   const { success: createSuccess, event: message } = eventCreate;
+  const { success: deleteSuccess, event: messageDelete } = eventCreate;
   const dispatch = useDispatch();
   const token = Cookies.get('token');
-
-  const eventTypes = [
-    { id: 1, type: 'Business Trip' },
-    { id: 2, type: 'Leisure Travel' },
-    { id: 3, type: 'Adventure/Sport' },
-    { id: 4, type: 'Cultural Exploration' },
-    { id: 5, type: 'Sightseeing' },
-    { id: 6, type: 'Hiking/Trekking' },
-    { id: 7, type: 'Beach Vacation' },
-    { id: 8, type: 'Shopping Trip' },
-    { id: 9, type: 'Food and Culinary Experience' },
-    { id: 10, type: 'Wellness and Spa Retreat' },
-    { id: 11, type: 'Educational Travel/Activities' },
-    { id: 12, type: 'Volunteer/Community Service Trip' },
-    { id: 13, type: 'Family Vacation' },
-    { id: 14, type: 'Romantic Getaway' },
-    { id: 15, type: 'Wildlife and Nature Exploration' },
-  ];
 
   const getPreviousSaturday = (date) => {
     const day = date.getDay();
@@ -106,8 +277,9 @@ const Timetable = () => {
   useEffect(() => {
     dispatch(fetchEvents(timetableID));
     setFetchedEvent(events);
+    dispatch({ type: EVENT_DELETE_RESET });  // Reset the delete success state
     console.log(events);
-  }, [token, timetableID, dispatch]);
+  }, [token, timetableID, deleteSuccess]);
 
   useEffect(() => {
     if (createSuccess) {
@@ -127,7 +299,7 @@ const Timetable = () => {
     }
   };
 
-  const handleUpdateEvent = async (event, action) => {
+  const handleUpdateEvent = async (event) => {
     try {
       dispatch(updateEvent(event));
     } catch (error) {
@@ -135,9 +307,10 @@ const Timetable = () => {
     }
   };
 
-  const handleDeleteEvent = async (event, action) => {
+  const handleDeleteEvent = async (id) => {
+    console.log(id);
     try {
-      dispatch(deleteEvent(event));
+      dispatch(deleteEvent(id));
     } catch (error) {
       console.error('Failed to delete event:', error);
     }
@@ -259,8 +432,10 @@ const Timetable = () => {
 
   const formatEvents = (events) => {
     return events.map(event => {
+      console.log(event.activityStartTime, event.activityEndTime);
       const startTime = new Date(event.activityStartTime);
       const endTime = new Date(event.activityEndTime);
+      console.log(startTime, endTime);
 
       const start = new Date(new Date().setFullYear(endTime.getFullYear(), endTime.getMonth(), endTime.getDate()));
       start.setHours(startTime.getHours());
@@ -269,6 +444,8 @@ const Timetable = () => {
       const end = new Date(new Date().setFullYear(endTime.getFullYear(), endTime.getMonth(), endTime.getDate()));
       end.setHours(endTime.getHours());
       end.setMinutes(endTime.getMinutes());
+
+      console.log(start, end);
 
       return {
         event_id: event.activityID,
@@ -322,37 +499,21 @@ const Timetable = () => {
           startHour: 6,
           endHour: 30
         }}
+        customEditor={
+          (scheduler) => <CustomEditor 
+          scheduler={scheduler} 
+          onCreateEvent={handleCreateEvent}
+          onUpdateEvent={handleUpdateEvent}
+        />}
+        onDelete={handleDeleteEvent}
         selectedDate={selectedDate}
         events={formatEvents(events)}
         editable={true}
         deletable={true}
         draggable={true}
-        onEventDrop={handleEventDrop}
-        onConfirm={handleCreateEvent}
-        onEventDelete={handleDeleteEvent}
         minDate={new Date(startDateParam)}
         maxDate={new Date(endDateParam)}
         navigation={false}
-        fields={[
-          {
-            name: 'event_type',
-            type: 'select',
-            options: eventTypes.map(type => ({ value: type.id, text: type.type })),
-            config: { label: 'Event Type', required: true }
-          },
-          {
-            name: 'region',
-            label: 'Region',
-            type: 'input',
-            config: { label: 'Region', required: true, GooglePlacesTextField }
-          },
-          {
-            name: 'description',
-            label: 'Description',
-            type: 'input',
-            config: { label: 'Description', multiline: true }
-          },
-        ]}
       />
       <Modal
         open={isModalOpen}

@@ -12,6 +12,7 @@ import {
   EVENT_DELETE_REQUEST,
   EVENT_DELETE_SUCCESS,
   EVENT_DELETE_FAIL,
+  EVENT_DELETE_RESET,
 } from '../constants/eventConstants';
 
 export const createEvent = (event, timetableID) => async (dispatch) => {
@@ -99,16 +100,34 @@ export const fetchEvents = (timetableID) => async (dispatch) => {
   }
 };
 
-export const updateEvent = (event) => async (dispatch) => {
+export const updateEvent = (event, timetableID) => async (dispatch) => {
   try {
     dispatch({ type: EVENT_UPDATE_REQUEST });
+    console.log(event)
 
-    const { data } = await axios.put(`https://localhost:7262/api/Activity/update-event/${event.event_id}`, event);
+    const config = {
+      headers: {
+          'Content-Type': 'application/json',
+      },
+    };
 
-    dispatch({
-      type: EVENT_UPDATE_SUCCESS,
-      payload: data,
-    });
+    const response = await axios.put(`https://localhost:7262/api/Activity/update-event`, {
+      ActivityID: event.event_id,
+      ActivityTitle: event.title,
+      ActivityType: event.event_type,
+      ActivityStartTime: event.start,
+      ActivityEndTime: event.end,
+      ActivityRegion: event.region,
+      ActivityDescription: event.description,
+    }, config);
+
+    if (response.flag) {
+      dispatch({
+        type: EVENT_UPDATE_SUCCESS,
+        payload: response.message,
+      });
+    }
+
   } catch (error) {
     dispatch({
       type: EVENT_UPDATE_FAIL,
@@ -122,13 +141,22 @@ export const updateEvent = (event) => async (dispatch) => {
 export const deleteEvent = (eventId) => async (dispatch) => {
   try {
     dispatch({ type: EVENT_DELETE_REQUEST });
+    console.log("Enter delete event");
+    console.log(eventId);
 
-    await axios.delete(`https://localhost:7262/api/Activity/delete-event/${eventId}`);
+    const response = await axios.delete(`https://localhost:7262/api/Activity/delete-event/${eventId}`);
 
-    dispatch({
-      type: EVENT_DELETE_SUCCESS,
-      payload: eventId,
-    });
+    if (response.flag) {
+      dispatch({
+        type: EVENT_DELETE_SUCCESS,
+        payload: response.message,
+      });
+
+      dispatch({type: EVENT_DELETE_RESET});
+
+      dispatch({type: EVENT_GET_REQUEST});
+    }
+
   } catch (error) {
     dispatch({
       type: EVENT_DELETE_FAIL,
