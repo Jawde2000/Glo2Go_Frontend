@@ -7,7 +7,7 @@ import { Loader } from "../../commons/Loader/Loader";
 import { useSelector, useDispatch } from 'react-redux';
 import { createTimeline } from '../../../actions/timelinesActions';
 import { TIMELINE_CREATE_RESET } from '../../../constants/timelineConstants';
-import countryData from './country.json'; // Import your local country.json file
+import countryData from '../../commons/country.json'
 import axios from 'axios';
 
 const NewTimelines = () => {

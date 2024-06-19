@@ -5,7 +5,7 @@ import { Card, CardMedia, CardContent, Typography, CircularProgress, Box, IconBu
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import {useSelector, useDispatch} from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 
 function SiteDetails() {
   const { siteId } = useParams();
@@ -20,8 +20,8 @@ function SiteDetails() {
   const handleCloseAddReview = () => setOpenAddReview(false);
   const [overallRating, setOverallRating] = useState(0);
   const [comment, setComment] = useState('');
-  const userLogin = useSelector(state => state.userLogin)
-  const {userInfo} = userLogin;
+  const userLogin = useSelector(state => state.userLogin);
+  const { userInfo } = userLogin;
 
   const fetchSite = async () => {
     try {
@@ -29,12 +29,23 @@ function SiteDetails() {
         SiteID: siteId
       });
 
-      const response2 = await axios.post('https://localhost:7262/api/Review/spcfs/review', {
-        reviewSite: siteId,
-        TravelerComment: User.TravelerEmail,
-      });
-      setSite(response.data);
+      var response2;
+
+      if (User !== null) {
+        response2 = await axios.post('https://localhost:7262/api/Review/spcfs/review', {
+          reviewSite: siteId,
+          TravelerComment: User.TravelerEmail,
+        });
+      } else {
+        response2 = await axios.post('https://localhost:7262/api/Review/spcfs/review', {
+          reviewSite: siteId,
+          TravelerComment: "",
+        });
+      }
+
       setReviews(response2.data);
+      setSite(response.data);
+
       setLoading(false);
 
       const totalRating = response2.data.reduce((sum, review) => sum + review.reviewRating, 0);
@@ -75,9 +86,11 @@ function SiteDetails() {
   };
 
   useEffect(() => {
-    console.log(userInfo.TravelerEmail)
-    const user = JSON.parse(userInfo);
-    setUser(user);
+    if (userInfo !== null) {
+      console.log(userInfo.TravelerEmail)
+      const user = JSON.parse(userInfo);
+      setUser(user);
+    }
 
     fetchSite();
   }, [siteId, fetchSite]);
@@ -128,9 +141,9 @@ function SiteDetails() {
           <Typography variant="h6" ml={1}>{averageRating.toFixed(2)}</Typography>
           <Typography variant="body2" color="textSecondary" ml={1}>({reviews.length})</Typography>
         </Box>
-        <Button variant="contained" color="primary" sx={{ mb: 2 }} onClick={handleOpenAddReview}>
+        {userInfo !== null? <Button variant="contained" color="primary" sx={{ mb: 2 }} onClick={handleOpenAddReview}>
           Write a Review
-        </Button>
+        </Button>:null}
         <Modal open={openAddReview} onClose={handleCloseAddReview} aria-labelledby="modal-modal-title" aria-describedby="modal-modal-description">
         <Card sx={{ maxWidth: 600, margin: 'auto', mt: 5, p: 2 }}>
           <CardContent>

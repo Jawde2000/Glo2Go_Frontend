@@ -10,6 +10,10 @@ import {
     CHECK_TOKENVALIDATION_SUCCESS,
     CHECK_TOKENVALIDATION_FAIL,
     CHECK_TOKENVALIDATION_RESET,
+
+    USER_REGISTER_REQUEST,
+    USER_REGISTER_SUCCESS,
+    USER_REGISTER_FAIL,
 } from '../constants/userConstants';
 import Cookies from 'js-cookie';
 
@@ -18,6 +22,7 @@ export const logout = (token) => async (dispatch) => {
   Cookies.remove('refreshToken');
   Cookies.remove('token');
   Cookies.remove('userinfo');
+
   const response = await axios.post('https://localhost:7262/api/Authentication/check-token-validation', {
     token: token
   })
@@ -30,16 +35,24 @@ export const logout = (token) => async (dispatch) => {
 export const checkValidToken = (token) => async (dispatch) => {
   dispatch({ type: CHECK_TOKENVALIDATION_REQUEST });
 
+  if (token === null) {
+    return dispatch({
+      type: CHECK_TOKENVALIDATION_RESET,
+    });
+  }
+
   const config = {
     headers: {
       'Content-Type': 'application/json',
     },
   };
 
+  console.log(token);
+  
   try {
     const response = await axios.post('https://localhost:7262/api/Authentication/check-token-validation', {
-      token: token
-    }, config);
+      token
+    }, );
 
     console.log(response);
 
@@ -80,6 +93,8 @@ export const checkValidToken = (token) => async (dispatch) => {
     });
   }
 }
+
+
 export const login = (email, password) => async (dispatch) => {
   try {
     console.log("Enter Login process");
@@ -142,5 +157,34 @@ export const login = (email, password) => async (dispatch) => {
       payload: error.response?.data?.message || error.message
     });
     alert("Login error: " + (error.response?.data?.message || error.message));
+  }
+};
+
+export const register = (email, password, confirmPassword) => async (dispatch) => {
+  dispatch({ type: USER_REGISTER_REQUEST });
+
+  const config = {
+    headers: {
+        'Content-Type': 'application/json',
+    },
+  };
+
+  try {
+    console.log(password, confirmPassword);
+      const response = await axios.post('https://localhost:7262/api/authentication/register', {
+          Email: email,
+          Password: password,
+          ConfirmPass: confirmPassword,
+      }, config);
+
+      console.log(response);
+      dispatch({ type: USER_REGISTER_SUCCESS, payload: response.data });
+  } catch (error) {
+      dispatch({
+          type: USER_REGISTER_FAIL,
+          payload: error.response?.data?.message || error.message,
+      });
+      console.error("Error during registration:", error);
+      alert("Registration error: " + (error.response?.data?.message || error.message));
   }
 };

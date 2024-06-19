@@ -1,0 +1,6 @@
+/* styles.css or similar */
+.highlighted-cell {
+    background-color: rgba(0, 123, 255, 0.3); /* Light blue background for the highlighted cells */
+    border: 1px solid #007bff; /* Blue border */
+  }
+  

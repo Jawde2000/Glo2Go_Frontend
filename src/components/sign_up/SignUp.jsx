@@ -5,48 +5,33 @@ import { useSnackbar } from 'notistack';
 import { IsValidEmail } from "../../components/functions/IsValidEmail";
 import { Loader } from "../commons/Loader/Loader";
 import { Google as GoogleIcon } from '@mui/icons-material';
+import { register } from '../../actions/userActions';
+import { useSelector, useDispatch } from 'react-redux';
+import { USER_REGISTER_RESET } from '../../constants/userConstants';
 
 const SignUp = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false); // Loading state
+  const userRegister = useSelector(state => state.userRegister);
+  const { success, userInfo } = userRegister;
+  const dispatch = useDispatch();
 
   const { enqueueSnackbar } = useSnackbar();
 
   const handleRegister = async () => {
+    
     setLoading(true); // Start loading
 
     try {
-      const response = await fetch('https://localhost:7262/api/authentication/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          Email: email,
-          Password: password,
-          ConfirmPass: confirmPassword,
-        }),
-      });
-
-      const data = await response.json();
-
-      console.log(data);
-
-      if (response.ok) {
-        // enqueueSnackbar(data.message, { variant: 'success' });
-        alert(data.message);
-      } else {
-        // enqueueSnackbar(data.message || "Registration failed. Please try again.", { variant: 'error' });
-
-        alert(data.message);
-      }
+      dispatch(register(email, password, confirmPassword));
     } catch (error) {
       console.error('Error during registration:', error);
       enqueueSnackbar('Network error. Please try again later.', { variant: 'error' });
     } finally {
       setLoading(false); // Stop loading regardless of the outcome
+      dispatch({type: USER_REGISTER_RESET})
     }
   };
 

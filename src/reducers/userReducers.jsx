@@ -14,18 +14,16 @@ import {
     USER_DELETE_SUCCESS,
     USER_DELETE_FAIL,
     USER_DELETE_RESET,
-
-    USER_REGISTER_REQUEST, 
-    USER_REGISTER_SUCCESS,
-    USER_REGISTER_FAIL,
-    USER_REGISTER_RESET,
-
+    
     CHECK_TOKENVALIDATION_REQUEST,
     CHECK_TOKENVALIDATION_SUCCESS,
     CHECK_TOKENVALIDATION_FAIL,
     CHECK_TOKENVALIDATION_RESET,
 
-
+    USER_REGISTER_REQUEST,
+    USER_REGISTER_SUCCESS,
+    USER_REGISTER_FAIL,
+    USER_REGISTER_RESET,
 } from '../constants/userConstants'
 
 export const userLoginReducer = (state = { }, action) => {
@@ -103,3 +101,22 @@ export const tokenValidationReducer = (state = { }, action) => {
             return state
     }
 }
+
+export const userRegisterReducer = (state = {}, action) => {
+    switch(action.type) {
+        case USER_REGISTER_REQUEST:
+            return { loading: true };
+
+        case USER_REGISTER_SUCCESS:
+            return { loading: false, success: true, userInfo: action.payload };
+
+        case USER_REGISTER_FAIL:
+            return { loading: false, error: action.payload };
+
+        case USER_REGISTER_RESET:
+            return {};
+
+        default:
+            return state;
+    }
+};

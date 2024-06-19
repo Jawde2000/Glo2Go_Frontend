@@ -51,9 +51,9 @@ export const createTimeline = (TimelineTitle, TimelineStartDate, TimelineEndDate
         }, config);
 
         console.log(data);
-
-
-        dispatch({ type: TIMELINE_CREATE_SUCCESS, payload: data });
+        if (data.flag) {
+            dispatch({ type: TIMELINE_CREATE_SUCCESS, payload: data });
+        }
     } catch (error) {
         dispatch({
             type: TIMELINE_CREATE_FAIL,
