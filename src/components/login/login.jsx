@@ -10,6 +10,7 @@ import Cookies from 'js-cookie';
 import { checkValidToken } from '../../actions/userActions';
 import { styled } from '@mui/material/styles';
 import CardComponent from "../commons/CardComponent";
+import { useNavigate } from 'react-router-dom';
 
 const StyledTextField = styled(TextField)({
   '& .MuiOutlinedInput-root': {
@@ -40,15 +41,14 @@ function LoginScreen() {
   const [weather, setWeather] = useState(null);
   const [backgroundImage, setBackgroundImage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-
+  const navigate = useNavigate();
   const tokenValidation = useSelector(state => state.tokenValidation);
   const { isValid } = tokenValidation;
   const dispatch = useDispatch();
   const token = Cookies.get('token');
 
   const handleSearch = () => {
-    // Implement search functionality here
-    console.log('Searching for:', searchTerm);
+    navigate(`/glo2go/search/${encodeURIComponent(searchTerm)}`);
   };
 
   useEffect(() => {

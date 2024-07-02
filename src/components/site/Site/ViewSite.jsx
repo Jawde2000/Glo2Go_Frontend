@@ -1,197 +1,180 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Grid, Box, TextField, Button, IconButton, CircularProgress, Typography, Avatar } from '@mui/material';
-import { useParams, useNavigate } from 'react-router-dom';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import SaveIcon from '@mui/icons-material/Save';
+import React, { useState, useEffect } from "react";
+import { Paper, Typography, TextField, Button, Grid, Divider, MenuItem } from '@material-ui/core';
+import { useSnackbar } from 'notistack';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
 import axios from 'axios';
-import { makeStyles } from '@mui/styles';
-
-const useStyles = makeStyles((theme) => ({
-    root: {
-        backgroundRepeat: "no-repeat",
-        backgroundSize: "cover",
-        minHeight: "100vh",
-    },
-    box: {
-        backgroundColor: "#f0f0f0",
-    },
-    avatar: {
-        width: 150,
-        height: 150,
-        margin: 'auto'
-    },
-}));
+import { CircularProgress } from '@mui/material';
+import countryData from '../../timelines/new_timelines/country.json';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const ViewSite = () => {
-    const classes = useStyles();
-    const navigate = useNavigate();
-    const { siteId } = useParams();
-    const [loading, setLoading] = useState(false);
-    const [editMode, setEditMode] = useState(false);
-    const [error, setError] = useState('');
-    const [site, setSite] = useState({
-        SiteName: '',
-        SiteCountry: '',
-        SiteAddress: '',
-        SiteDesc: '',
-        SiteOperatingHour: ''
-    });    
+  const { siteId } = useParams();
+  const [loading, setLoading] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [error, setError] = useState('');
+  const [countries, setCountries] = useState([]);
+  const [country, setCountry] = useState('');
+  const [site, setSite] = useState({
+    SiteName: '',
+    SiteCountry: '',
+    SiteAddress: '',
+    SiteDesc: '',
+    SiteOperatingHour: ''
+  });
 
-    useEffect(() => {
-        const fetchSite = async () => {
-        setLoading(true);
-        console.log(siteId)
-        const url = `https://localhost:7262/api/Site/site`; // Adjust the URL as necessary
-        const requestData = {
-            SiteID: siteId
-        };
+  const { enqueueSnackbar } = useSnackbar();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-        try {
-            const response = await axios.post(url, requestData);
-            console.log(response); // For debugging purposes
-            setSite(response.data);
-        } catch (err) {
-            setError('Failed to fetch site details: ' + err.message);
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
+  // Fetch site details
+  useEffect(() => {
+    const fetchSite = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.post(`https://localhost:7262/api/Site/site`, {
+          siteID: siteId
+        });
+        setSite(response.data);
+        console.log(response);
+        setCountry(response.data.siteCountry);
+      } catch (error) {
+        console.error('Error fetching site details:', error);
+        setError('Failed to fetch site details');
+      } finally {
+        setLoading(false);
+      }
     };
 
-        fetchSite();
-    }, [siteId]);
+    fetchSite();
+  }, [siteId]);
 
-    const handleBack = () => navigate('/admin/glo2go/site');
-    const toggleEditMode = () => setEditMode(!editMode);
-    const handleChange = (event) => {
-        setSite(prevSite => ({
-            ...prevSite,
-            [event.target.name]: event.target.value
-        }));
-    };
-    
+  // Handle edit mode toggle
+  const handleEdit = () => {
+    setEditMode(true);
+  };
 
-    const handleSave = async () => {
-        try {
-            const response = await axios.put(`https://localhost:7262/api/Site/UpdateSite`, site);
+  useEffect(() => {
+    console.log(countryData);
+    const formattedCountryData = countryData.map(country => ({
+      name: country.name.common,
+      code: country.ccn3,
+    })).sort((a, b) => a.name.localeCompare(b.name));
+    setCountries(formattedCountryData);
+  }, []);
 
-            if (response.ok) 
-            {
-                alert(response.data.message);
-            } else {
-                alert(response.data.message);
-            }   
-        } catch (error) {
-            alert('Failed to update site: ' + error.message);
-        }
-    };
+  // Save edited site details
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      await axios.put(`https://localhost:7262/api/Site/UpdateSite`, site);
+      enqueueSnackbar('Site details updated successfully!', { variant: 'success' });
+      setEditMode(false);
+    } catch (error) {
+      console.error('Error updating site details:', error);
+      enqueueSnackbar('Failed to update site details. Please try again later.', { variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleDelete = async () => {
-        if (window.confirm('Are you sure you want to delete this site?')) { 
-                try {
-                    const response = await axios.delete(`https://localhost:7262/api/Site/DeleteSite`, {
-                    data: { SiteID: siteId }, // Axios expects `data` for the body in DELETE requests
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-        
-                console.log(response.data); // Log the response data from axios
-        
-                if (response.status === 200) { // Check if the status is OK
-                    alert(response.data.message);
-                } else {
-                    alert('Failed to delete site: ' + response.data.message);
-                }
-                navigate('admin/glo2go/site');
-            } catch (error) {
-                alert('Failed to delete site.');
-            }
-        }
-    };
+  const handleCountryChange = (e) => {
+    const inputCountry = e.target.value;
+    if (countries.find(country => country.name === inputCountry)) {
+      setCountry(inputCountry);
+    } else {
+      setCountry('');
+    }
+  };
 
-    if (loading) return <CircularProgress />;
+  // Cancel editing
+  const handleCancel = () => {
+    setEditMode(false);
+  };
 
-    return (
-        <Container className={classes.root}>
-            <Button startIcon={<ArrowBackIcon />} onClick={handleBack}>Back</Button>
-            <Box p={4} className={classes.box}>
-                <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} md={4}>
-                        <Avatar src={site?.SitePics?.[0]} className={classes.avatar} />
-                    </Grid>
-                    <Grid item xs={12} md={8}>
-                        {editMode ? (
-                            <>
-                                <TextField
-                                    fullWidth
-                                    variant="outlined"
-                                    label="Site Name"
-                                    name="siteName"
-                                    value={site.siteName}
-                                    onChange={handleChange}
-                                />
-                                <TextField
-                                    fullWidth
-                                    variant="outlined"
-                                    label="Country"
-                                    name="siteCountry"
-                                    value={site.siteCountry}
-                                    onChange={handleChange}
-                                />
-                                <TextField
-                                    fullWidth
-                                    variant="outlined"
-                                    label="Address"
-                                    name="siteAddress"
-                                    value={site.siteAddress}
-                                    onChange={handleChange}
-                                />
-                                <TextField
-                                    fullWidth
-                                    variant="outlined"
-                                    label="Description"
-                                    name="siteDesc"
-                                    value={site.siteDesc}
-                                    onChange={handleChange}
-                                />
-                                <TextField
-                                    fullWidth
-                                    variant="outlined"
-                                    label="Operating Hours"
-                                    name="siteOperatingHour"
-                                    value={site.siteOperatingHour}
-                                    onChange={handleChange}
-                                />
-                            </>
-                        ) : (
-                            <>
-                                <Typography variant="h6">{site.SiteName}</Typography>
-                                <Typography>{site.siteCountry}</Typography>
-                                <Typography>{site.siteAddress}</Typography>
-                                <Typography>{site.siteDesc}</Typography>
-                                <Typography>{site.siteOperatingHour}</Typography>
-                            </>
-                        )}
-                        {editMode ? (
-                            <Button startIcon={<SaveIcon />} onClick={handleSave} color="primary">
-                                Save
-                            </Button>
-                        ) : (
-                            <Button startIcon={<EditIcon />} onClick={toggleEditMode} color="primary">
-                                Edit
-                            </Button>
-                        )}
-                        <Button startIcon={<DeleteIcon />} onClick={handleDelete} color="secondary">
-                            Delete
-                        </Button>
-                    </Grid>
-                </Grid>
-            </Box>
-        </Container>
-    );
+  // Render loading spinner while fetching data
+  if (loading) return <CircularProgress />;
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Paper elevation={3} style={{ padding: 16, width: 550 }}>
+      <Button onClick={() => navigate(-1)}><ArrowBackIcon /> Back</Button>
+        <Typography variant="h5" sx={{ fontSize: '1rem', fontStyle: 'italic', fontFamily: 'Cursive', color: 'deepPurple', textAlign: 'center' }}>
+          View Site Details
+        </Typography>
+        <Divider />
+        <Grid container spacing={2} alignItems="center" style={{ marginTop: '16px' }}>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Site Name"
+              value={site.siteName}
+              InputProps={{ readOnly: !editMode }}
+              onChange={(e) => setSite({ ...site, SiteName: e.target.value })}
+              margin="normal"
+            />
+            <TextField
+                select
+                label="Country"
+                fullWidth
+                value={country}
+                InputProps={{ readOnly: !editMode }}
+                onChange={handleCountryChange}
+                margin="normal"
+            >
+            {countries.map((country) => (
+                <MenuItem key={country.code} value={country.name}>
+                {country.name}
+                </MenuItem>
+            ))}
+            </TextField>
+            <TextField
+              fullWidth
+              multiline
+              rows={editMode? 10:2}
+              label="Description"
+              value={site.siteDesc}
+              InputProps={{ readOnly: !editMode }}
+              onChange={(e) => setSite({ ...site, SiteDesc: e.target.value })}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Address"
+              value={site.siteAddress}
+              InputProps={{ readOnly: !editMode }}
+              onChange={(e) => setSite({ ...site, SiteAddress: e.target.value })}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Operating Hours"
+              value={site.siteOperatingHour}
+              InputProps={{ readOnly: !editMode }}
+              onChange={(e) => setSite({ ...site, SiteOperatingHour: e.target.value })}
+              margin="normal"
+            />
+          </Grid>
+          <Grid item xs={12} style={{ textAlign: 'center', marginTop: '16px' }}>
+            {editMode ? (
+              <>
+                <Button onClick={handleSave} color="primary" variant="contained" disabled={loading}>
+                  Save
+                </Button>
+                <Button onClick={handleCancel} color="secondary" style={{ marginLeft: '8px' }}>
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <Button onClick={handleEdit} color="primary">
+                Edit
+              </Button>
+            )}
+          </Grid>
+        </Grid>
+      </Paper>
+    </div>
+  );
 };
 
 export default ViewSite;

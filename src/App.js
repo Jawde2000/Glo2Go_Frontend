@@ -15,7 +15,6 @@ import CreateSiteForm from './components/site/Site/CreateSiteForm';
 import ViewSites from './components/site/Site/ViewSites';
 import ResetPassword from './components/reset_password/reset_link';
 import AdminLoginScreen from './components/Admin/AdminLogin/AdminLoginScreen';
-import Cookies from 'js-cookie';
 import React, { useEffect, useState } from 'react';
 import TravelerList from './components/Admin/UserManagement/TravelerList';
 import TravelerForm from './components/Admin/UserManagement/TravelerForm';
@@ -35,6 +34,10 @@ import HotelList from './components/Hotel/HotelBooking.jsx';
 import UserProfile from './components/UserProfile/UserProfile.jsx';
 import UpdateTimeline from './components/timelines/travelplans/updateTravelPlans.jsx';
 import Timetable from './components/timelines/travelplans/Timetable.jsx';
+import SearchPage from './components/home/SearchPage.jsx';
+import ReportList from './components/home/ReportList.jsx';
+import ReportListAdmin from './components/Admin/reportManagement/ReportList.jsx';
+import Cookies from 'js-cookie';
 
 const drawerWidth = 300;
 
@@ -63,7 +66,8 @@ function App() {
   const handleDrawerOpen = () => setOpen(true);
   const handleDrawerClose = () => setOpen(false);
   const userLogin = useSelector(state => state.userLogin);
-  const {userInfo, token, refreshToken, admin} = userLogin;
+  const {userInfo, token, refreshToken} = userLogin;
+  const admin = Cookies.get('admin'); 
 
   useEffect(() => {
     console.log(userInfo);
@@ -79,9 +83,13 @@ function App() {
       {userInfo && admin === "true"? <Topbar /> : null}
       {userInfo && admin === "true"? <SideBar open={open} handleDrawerOpen={handleDrawerOpen} handleDrawerClose={handleDrawerClose} /> : null}
         <Routes>
-          <Route path="/" element={<Navigate replace to="/glo2go/home" />} />
+          {admin === "true"?
+            <Route path="/" element={<Navigate replace to="/glo2go/admin" />} />:
+            <Route path="/" element={<Navigate replace to="/glo2go/home" />} />
+          }
           {/* <Route path='/glo2go/profile' element={<ProfileForm />} /> */}
           <Route path="home" element={<Home />} />
+          <Route path="glo2go/admin" element={<Dashboard />} />
           <Route path="review" element={<UserReviewScreen />} />
           <Route path="glo2go/home" element={<LoginScreen />} />
           <Route path="glo2go/hotel" element={<HotelList />} />
@@ -99,12 +107,15 @@ function App() {
           <Route path="admin/glo2go/dashboard/travellist" element={<TravelerList />} />
           <Route path="admin/glo2go/dashboard/travellist/travelerform" element={<TravelerForm />} />
           <Route path="admin/glo2go/dashboard/travellist/travelerdetails" element={<TravelerDetails />} />
+          <Route path="admin/glo2go/dashboard/reportlist" element={<ReportListAdmin />} />
           <Route path="admin/glo2go/dashboard" element={<Dashboard />} />
           <Route path='glo2go/AttractionsList' element={<AttractionsList />} />
           <Route path="glo2go/AttractionsList/:siteId" element={<SiteDetails />} />
           <Route path="glo2go/userprofile" element={<UserProfile />} />
           <Route path="glo2go/travelplans/timetable/:timetableID/:startDate/:endDate/:country/:region/:timelineTitle" element={<Timetable />} />
           <Route path="glo2go/travelplans/edit/:tableId" element={<UpdateTimeline/>} />
+          <Route path="glo2go/search/:searchItem" element={<SearchPage/>} />
+          <Route path="glo2go/report/:travelerEmail" element={<ReportList/>} />
           {/* Include any other routes here */}
         </Routes>
         <Footer />

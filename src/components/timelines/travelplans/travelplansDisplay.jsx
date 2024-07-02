@@ -112,9 +112,6 @@ const TravelPlanDisplay = () => {
                     </Typography>
                   </CardContent>
                   <CardActions>
-                    <Button size="small" color="primary">
-                      0 saves
-                    </Button>
                     <Button
                       size="small"
                       color="primary"

@@ -1,65 +1,48 @@
+import React, { useState, useEffect } from "react";
 import { useTheme } from "@mui/material";
 import { ResponsiveBar } from "@nivo/bar";
+import axios from "axios";
 import { tokens } from "../../theme";
+
+// Utility function to generate random color
+const getRandomColor = () => {
+  const letters = '0123456789ABCDEF';
+  let color = '#';
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+};
 
 const BarChart = ({ isDashboard = false }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const [data, setData] = useState([]);
 
-  // Example Data Array
-const data = [
-  {
-    country: "USA",
-    "hot dog": 60,
-    burger: 80,
-    sandwich: 55,
-    kebab: 40,
-    fries: 20,
-    donut: 25
-  },
-  {
-    country: "France",
-    "hot dog": 30,
-    burger: 40,
-    sandwich: 70,
-    kebab: 35,
-    fries: 25,
-    donut: 45
-  },
-  {
-    country: "Germany",
-    "hot dog": 50,
-    burger: 75,
-    sandwich: 60,
-    kebab: 40,
-    fries: 30,
-    donut: 20
-  },
-  {
-    country: "UK",
-    "hot dog": 70,
-    burger: 85,
-    sandwich: 65,
-    kebab: 45,
-    fries: 35,
-    donut: 50
-  },
-  {
-    country: "Canada",
-    "hot dog": 40,
-    burger: 55,
-    sandwich: 50,
-    kebab: 30,
-    fries: 20,
-    donut: 30
-  }
-];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get("https://localhost:7262/api/DashBoard/api/reports/count-by-type");
+        console.log(response.data);
+
+        const formattedData = Object.keys(response.data).map((key) => ({
+          activityType: key,
+          count: response.data[key],
+          color: getRandomColor(), // Assign random color
+        }));
+        setData(formattedData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <ResponsiveBar
       data={data}
       theme={{
-        // added
         axis: {
           domain: {
             line: {
@@ -87,33 +70,13 @@ const data = [
           },
         },
       }}
-      keys={["hot dog", "burger", "sandwich", "kebab", "fries", "donut"]}
-      indexBy="country"
+      keys={["count"]}
+      indexBy="activityType"
       margin={{ top: 50, right: 130, bottom: 50, left: 60 }}
       padding={0.3}
       valueScale={{ type: "linear" }}
       indexScale={{ type: "band", round: true }}
-      colors={{ scheme: "nivo" }}
-      defs={[
-        {
-          id: "dots",
-          type: "patternDots",
-          background: "inherit",
-          color: "#38bcb2",
-          size: 4,
-          padding: 1,
-          stagger: true,
-        },
-        {
-          id: "lines",
-          type: "patternLines",
-          background: "inherit",
-          color: "#eed312",
-          rotation: -45,
-          lineWidth: 6,
-          spacing: 10,
-        },
-      ]}
+      colors={({ data }) => data.color} // Use random color for each bar
       borderColor={{
         from: "color",
         modifiers: [["darker", "1.6"]],
@@ -124,7 +87,7 @@ const data = [
         tickSize: 5,
         tickPadding: 5,
         tickRotation: 0,
-        legend: isDashboard ? undefined : "country", // changed
+        legend: isDashboard ? undefined : "Activity Type",
         legendPosition: "middle",
         legendOffset: 32,
       }}
@@ -132,7 +95,7 @@ const data = [
         tickSize: 5,
         tickPadding: 5,
         tickRotation: 0,
-        legend: isDashboard ? undefined : "food", // changed
+        legend: isDashboard ? undefined : "Count",
         legendPosition: "middle",
         legendOffset: -40,
       }}
@@ -169,7 +132,7 @@ const data = [
       ]}
       role="application"
       barAriaLabel={function (e) {
-        return e.id + ": " + e.formattedValue + " in country: " + e.indexValue;
+        return e.id + ": " + e.formattedValue + " in activity type: " + e.indexValue;
       }}
     />
   );

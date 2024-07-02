@@ -178,12 +178,14 @@ function AttractionsList() {
             )
           }}
         />
-        <Button variant="outlined" color="primary" onClick={handleOpenFilterModal}>
-          Open Filters
-        </Button>
-        <Button variant="outlined" color="secondary" onClick={handleClearFilters} sx={{ marginLeft: 2 }}>
-          Clear Filters
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Button variant="outlined" color="primary" onClick={handleOpenFilterModal}>
+            Open Filters
+          </Button>
+          <Button variant="outlined" color="secondary" onClick={handleClearFilters}>
+            Clear Filters
+          </Button>
+        </Box>
       </Box>
       <Box sx={{ marginBottom: 4 }}>
         {Object.entries(appliedFilters).map(([key, value]) => (

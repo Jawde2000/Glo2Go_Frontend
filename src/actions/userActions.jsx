@@ -14,20 +14,26 @@ import {
     USER_REGISTER_REQUEST,
     USER_REGISTER_SUCCESS,
     USER_REGISTER_FAIL,
+
+    USER_UPDATE_REQUEST,
+    USER_UPDATE_SUCCESS,
+    USER_UPDATE_RESET,
+    USER_UPDATE_FAIL,
 } from '../constants/userConstants';
 import Cookies from 'js-cookie';
+import { alertClasses } from '@mui/material';
 
 export const logout = (token) => async (dispatch) => {
   Cookies.remove('admin'); 
   Cookies.remove('refreshToken');
   Cookies.remove('token');
   Cookies.remove('userinfo');
+  localStorage.removeItem('persist:root');
+  // const response = await axios.post('https://localhost:7262/api/Authentication/check-token-validation', {
+  //   token: token
+  // })
 
-  const response = await axios.post('https://localhost:7262/api/Authentication/check-token-validation', {
-    token: token
-  })
-
-  Cookies.set('token', response.data.token, { sameSite: 'Strict', secure: true });
+  // Cookies.set('token', response.data.token, { sameSite: 'Strict', secure: true });
 
   dispatch({type: USER_LOGOUT});
 }
@@ -99,64 +105,69 @@ export const login = (email, password) => async (dispatch) => {
   try {
     console.log("Enter Login process");
     dispatch({ type: USER_LOGIN_REQUEST });
-  
-    const response = await axios.post('https://localhost:7262/api/authentication/login', {
+
+    const response2 = await axios.post('https://localhost:7262/api/authentication/admin/login', {
       email: email,
       password: password,
     }, { withCredentials: true });
 
-    console.log(response);
-    console.log(response.data.flag);
-    // const decodedString = decodeURIComponent(response);
-    // const jsonObject1 = JSON.parse(decodedString);
-    // response =  JSON.parse(jsonObject1);
-
-    // const response2 = await axios.post('https://localhost:7262/api/authentication/admin/login', {
-    //   email: email,
-    //   password: password,
-    // }, { withCredentials: true });
-  
-    // console.log(response);
-    // console.log(response2);
-  
-    if (response.data.flag) {
-      console.log("Enter User Login Response");
+    if (response2.data.flag) {
+      alert(response2.data.message)
+      const response = await axios.post('https://localhost:7262/api/authentication/login', {
+        email: email,
+        password: password,
+      }, { withCredentials: true });
+      console.log(response2);
+      console.log("Enter Admin Login Response");
       console.log(response.data.token);
       Cookies.set('refreshToken', response.data.refreshToken, { sameSite: 'Strict', secure: true });
       Cookies.set('userinfo', JSON.stringify(response.data.data), { sameSite: 'Strict', secure: true });
       Cookies.set('token', response.data.token, { sameSite: 'Strict', secure: true });
-
+      Cookies.set('admin', true, { sameSite: 'Strict', secure: true });
       dispatch({
         type: USER_LOGIN_SUCCESS,
         payload: response.data
       });
-
-      // if (response2.data.flag) {
-      //   console.log("Enter Admin Login Response");
-      //   Cookies.set('admin', true, { sameSite: 'Strict', secure: true });
-      //   dispatch({
-      //     type: USER_LOGIN_SUCCESS,
-      //     payload: response.data
-      //   });
-      // } else {
-      //   dispatch({
-      //     type: USER_LOGIN_SUCCESS,
-      //     payload: response.data
-      //   });
-      // }
-
-      alert(response.data.message);
-    } else {
-      dispatch({ type: USER_LOGIN_FAIL, payload: response.data.message });
-      alert(response.data.message);
+      return;
     }
   } catch (error) {
-    console.error("Error during login:", error.response);
-    dispatch({
-      type: USER_LOGIN_FAIL,
-      payload: error.response?.data?.message || error.message
-    });
-    alert("Login error: " + (error.response?.data?.message || error.message));
+    try {
+      console.log("Enter User Login Response");
+      const response = await axios.post('https://localhost:7262/api/authentication/login', {
+        email: email,
+        password: password,
+      }, { withCredentials: true });
+
+      console.log(response);
+      console.log(response.data.flag);
+      // const decodedString = decodeURIComponent(response);
+      // const jsonObject1 = JSON.parse(decodedString);
+      // response =  JSON.parse(jsonObject1);
+    
+      console.log(response);
+    
+      if (response.data.flag) {
+        console.log("Enter User Login Response");
+        console.log(response.data.token);
+        Cookies.set('refreshToken', response.data.refreshToken, { sameSite: 'Strict', secure: true });
+        Cookies.set('userinfo', JSON.stringify(response.data.data), { sameSite: 'Strict', secure: true });
+        Cookies.set('token', response.data.token, { sameSite: 'Strict', secure: true });
+
+        dispatch({
+          type: USER_LOGIN_SUCCESS,
+          payload: response.data
+        });
+
+        alert(response.data.message);
+      }
+    } catch (error) {
+      console.error("Error during login:", error.response);
+      dispatch({
+        type: USER_LOGIN_FAIL,
+        payload: error.response?.data?.message || error.message
+      });
+      alert("Login error: " + (error.response?.data?.message || error.message));
+    }
   }
 };
 
@@ -186,5 +197,78 @@ export const register = (email, password, confirmPassword) => async (dispatch) =
       });
       console.error("Error during registration:", error);
       alert("Registration error: " + (error.response?.data?.message || error.message));
+  }
+};
+
+export const registerAdmin = (email, password, confirmPassword, isAdmin) => async (dispatch) => {
+  dispatch({ type: USER_REGISTER_REQUEST });
+  console.log("Enter Register admin");
+  console.log(isAdmin);
+  const role = isAdmin ? 1 : 2;
+  console.log(role);
+
+  const config = {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  };
+
+  try {
+    const response = await axios.post('https://localhost:7262/api/authentication/register-admin', {
+      Email: email,
+      Password: password,
+      ConfirmPass: confirmPassword,
+      role: role // Ensure 'role' is correctly assigned and sent
+    }, config);
+
+    console.log(response);
+
+    if (response.data.flag) {
+      alert(response.data.message);
+      dispatch({ type: USER_REGISTER_SUCCESS, payload: response.data });
+    }
+
+  } catch (error) {
+    dispatch({
+      type: USER_REGISTER_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+    console.error("Error during registration:", error);
+    alert("Registration error: " + (error.response?.data?.message || error.message));
+  }
+};
+
+
+export const updateUserProfile = (userUpdateDTO) => async (dispatch, getState) => {
+  try {
+    dispatch({ type: USER_UPDATE_REQUEST });
+
+    console.log(userUpdateDTO);
+
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+
+    const { data } = await axios.put('https://localhost:7262/api/Authentication/updateTraveler', {
+      firstName: userUpdateDTO.FirstName,
+      lastName: userUpdateDTO.LastName,
+      profilePic: userUpdateDTO.FirstName,
+      travelerEmail: userUpdateDTO.TravelerEmail,
+      gender: userUpdateDTO.Gender
+    }, config);
+
+    console.log(data)
+
+    if (data.flag) {
+      alert(data.message);
+      dispatch({type: USER_UPDATE_RESET, message: data.message});
+    }
+  } catch (error) {
+    dispatch({
+      type: USER_UPDATE_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
   }
 };

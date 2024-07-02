@@ -73,10 +73,16 @@ export const getTimelineDetails = (id) => async (dispatch) => {
             },
         };
 
+        console.log(id);
+
         const { data } = await axios.get('https://localhost:7262/api/Timetable/get-single-timetable?timetableId=' + id, config);
         console.log(data)
-
-        dispatch({ type: TIMELINE_GET_SUCCESS, payload: data });
+        const datas =  JSON.parse(data.message);
+        console.log(datas)
+        if (data.flag) {
+            console.log(datas);
+            dispatch({ type: TIMELINE_GET_SUCCESS, payload: datas });
+        }
     } catch (error) {
         dispatch({
             type: TIMELINE_GET_FAIL,
@@ -87,9 +93,13 @@ export const getTimelineDetails = (id) => async (dispatch) => {
     }
 }
 
-export const updateTimeline = (id, title, country, start, end, collaborator) => async (dispatch) => {
+export const updateTimeline = (id, title, country, start, end, travelerEmail, region) => async (dispatch) => {
     try {
         dispatch({ type: TIMELINE_UPDATE_REQUEST });
+        console.log(id);
+        console.log(country);
+        console.log(travelerEmail);
+        console.log(region);
 
         const config = {
             headers: {
@@ -102,12 +112,15 @@ export const updateTimeline = (id, title, country, start, end, collaborator) => 
             country: country,
             timelineStartDate: start,
             timelineEndDate: end,
-            collaboratorEmails: [
-                collaborator
-            ]
+            Region: region
         }, config)
 
-        dispatch({ type: TIMELINE_UPDATE_SUCCESS, payload: data });
+        console.log(data);
+        if (data.flag) {
+            alert(data.message);
+            dispatch({ type: TIMELINE_UPDATE_SUCCESS, payload: data });
+            listTimelines(travelerEmail);
+        }
     } catch (error) {
         dispatch({
             type: TIMELINE_UPDATE_FAIL,
@@ -147,6 +160,7 @@ export const listTimelines = (travelerEmail) => async (dispatch) => {
     try {
         console.log("Enter List Timelines");
         dispatch({ type: TIMELINE_VIEW_REQUEST });
+        console.log(travelerEmail);
 
         const { data } = await axios.get('https://localhost:7262/api/Timetable/get-timetable', {
             params: { travelerEmail },
@@ -154,7 +168,10 @@ export const listTimelines = (travelerEmail) => async (dispatch) => {
 
         console.log(data);
 
-        dispatch({ type: TIMELINE_VIEW_SUCCESS, payload: data });
+        // Sort the timelines by TimelineStartDate or another attribute
+        const sortedData = data.sort((a, b) => new Date(a.TimelineStartDate) - new Date(b.TimelineStartDate));
+
+        dispatch({ type: TIMELINE_VIEW_SUCCESS, payload: sortedData });
     } catch (error) {
         dispatch({
             type: TIMELINE_VIEW_FAIL,

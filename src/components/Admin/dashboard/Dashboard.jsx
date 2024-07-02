@@ -1,27 +1,124 @@
+import React, { useState, useEffect } from "react";
 import { Box, Button, IconButton, Typography, useTheme } from "@mui/material";
 import { tokens } from "../../../theme";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
-import EmailIcon from "@mui/icons-material/Email";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import TrafficIcon from "@mui/icons-material/Traffic";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
 import Header from "../../../components/Statistics/Header";
 import LineChart from "../../../components/Statistics/LineChart";
 import GeographyChart from "../../../components/Statistics/GeographyChart";
 import BarChart from "../../../components/Statistics/BarChart";
 import StatBox from "../../../components/Statistics/StatBox";
 import ProgressCircle from "../../../components/Statistics/ProgressCircle";
+import axios from "axios";
 
 const Dashboard = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const [siteTotal, setSiteTotal] = useState(0);
+  const [userTotal, setUserTotal] = useState(0);
+  const [reportTotal, setReportTotal] = useState(0);
+  const [latestReports, setLatestReports] = useState([]);
+  const [popularSites, setPopularSites] = useState([]);
+  const [reviewRatings, setReviewRatings] = useState([]);
+
+  useEffect(() => {
+    const fetchPopularSites = async () => {
+      try {
+        const response = await axios.get("https://localhost:7262/api/DashBoard/get-popular-site", {
+          params: { count: 5 }
+        });
+
+        const formattedData = response.data.map(site => ({
+          x: site.siteName,
+          y: site.reviewCount
+        }));
+
+        setPopularSites([{ id: "Popular Sites", data: formattedData }]);
+      } catch (error) {
+        console.error("Error fetching popular sites:", error);
+      }
+    };
+
+    fetchPopularSites();
+  }, []);
+
+  useEffect(() => {
+    const fetchReviewRatings = async () => {
+      try {
+        const response = await axios.get("https://localhost:7262/api/DashBoard/api/reviews/count-by-rating");
+        setReviewRatings(response.data);
+      } catch (error) {
+        console.error("Error fetching review ratings:", error);
+      }
+    };
+
+    fetchReviewRatings();
+  }, []);
+
+  useEffect(() => {
+    const fetchSiteTotal = async () => {
+      try {
+        const response = await axios.get("https://localhost:7262/api/DashBoard/total-sites-count");
+        console.log(response.data);
+
+        setSiteTotal(response.data);
+      } catch (error) {
+        console.error("Error fetching site total:", error);
+      }
+    };
+
+    fetchSiteTotal();
+  }, []);
+
+  useEffect(() => {
+    const fetchUserTotal = async () => {
+      try {
+        const response = await axios.get("https://localhost:7262/api/DashBoard/total-users-count");
+        setUserTotal(response.data);
+      } catch (error) {
+        console.error("Error fetching site total:", error);
+      }
+    };
+
+    fetchUserTotal();
+  }, []);
+
+  useEffect(() => {
+    const fetchReportTotal = async () => {
+      try {
+        const response = await axios.get("https://localhost:7262/api/DashBoard/api/reports/total-count");
+        setReportTotal(response.data);
+      } catch (error) {
+        console.error("Error fetching site total:", error);
+      }
+    };
+
+    fetchReportTotal();
+  }, []);
+
+  useEffect(() => {
+    const fetchLatestReports = async () => {
+      try {
+        const response = await axios.get('https://localhost:7262/api/DashBoard/get-latest-report', {
+          params: { count: 5 }
+        });        
+        setLatestReports(response.data);
+      } catch (error) {
+        console.error("Error fetching latest reports:", error);
+      }
+    };
+
+    fetchLatestReports();
+  }, []);
 
   return (
     <Box m="20px">
       {/* HEADER */}
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Header title="DASHBOARD" subtitle="Glo2Go dashboard" />
-
         <Box>
           <Button
             sx={{
@@ -47,55 +144,34 @@ const Dashboard = () => {
       >
         {/* ROW 1 */}
         <Box
-          gridColumn="span 3"
+          gridColumn="span 4"
           backgroundColor={colors.primary[400]}
           display="flex"
           alignItems="center"
           justifyContent="center"
         >
           <StatBox
-            title="12,361"
-            subtitle="Emails Sent"
-            progress="0.75"
-            increase="+14%"
+            title={siteTotal.toString()}
+            subtitle="Site Total"
+            progress="1.00"
             icon={
-              <EmailIcon
+              <LocationOnIcon
                 sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
               />
             }
           />
         </Box>
         <Box
-          gridColumn="span 3"
+          gridColumn="span 4"
           backgroundColor={colors.primary[400]}
           display="flex"
           alignItems="center"
           justifyContent="center"
         >
           <StatBox
-            title="431,225"
-            subtitle="Sales Obtained"
-            progress="0.50"
-            increase="+21%"
-            icon={
-              <PointOfSaleIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
-        </Box>
-        <Box
-          gridColumn="span 3"
-          backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <StatBox
-            title="32,441"
-            subtitle="New Clients"
-            progress="0.30"
-            increase="+5%"
+            title={userTotal.toString()}
+            subtitle="Total User"
+            progress="1.00"
             icon={
               <PersonAddIcon
                 sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
@@ -104,17 +180,16 @@ const Dashboard = () => {
           />
         </Box>
         <Box
-          gridColumn="span 3"
+          gridColumn="span 4"
           backgroundColor={colors.primary[400]}
           display="flex"
           alignItems="center"
           justifyContent="center"
         >
           <StatBox
-            title="1,325,134"
-            subtitle="Traffic Received"
-            progress="0.80"
-            increase="+43%"
+            title={reportTotal.toString()}
+            subtitle="Report Received"
+            progress="1.00"
             icon={
               <TrafficIcon
                 sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
@@ -122,7 +197,14 @@ const Dashboard = () => {
             }
           />
         </Box>
-
+        {/* <Box
+          gridColumn="span 3"
+          backgroundColor={colors.primary[400]}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
+        </Box> */}
         {/* ROW 2 */}
         <Box
           gridColumn="span 8"
@@ -142,14 +224,14 @@ const Dashboard = () => {
                 fontWeight="600"
                 color={colors.grey[100]}
               >
-                Revenue Generated
+                Review Ratings Distribution
               </Typography>
               <Typography
                 variant="h3"
                 fontWeight="bold"
                 color={colors.greenAccent[500]}
               >
-                $59,342.32
+                {Object.values(reviewRatings).reduce((a, b) => a + b, 0)} Total Reviews
               </Typography>
             </Box>
             <Box>
@@ -161,7 +243,7 @@ const Dashboard = () => {
             </Box>
           </Box>
           <Box height="250px" m="-20px 0 0 0">
-            <LineChart isDashboard={true} />
+            <LineChart isDashboard={true} data={popularSites} />
           </Box>
         </Box>
         <Box
@@ -170,53 +252,39 @@ const Dashboard = () => {
           backgroundColor={colors.primary[400]}
           overflow="auto"
         >
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            borderBottom={`4px solid ${colors.primary[500]}`}
-            colors={colors.grey[100]}
-            p="15px"
-          >
+        <Box gridColumn="span 4" gridRow="span 2" backgroundColor={colors.primary[400]} overflow="auto">
+          <Box display="flex" justifyContent="space-between" alignItems="center" borderBottom={`4px solid ${colors.primary[500]}`} colors={colors.grey[100]} p="15px">
             <Typography color={colors.grey[100]} variant="h5" fontWeight="600">
-              Recent Transactions
+              Recent Reports
             </Typography>
           </Box>
-          {/* {mockTransactions.map((transaction, i) => (
+          {latestReports.map((report) => (
             <Box
-              key={`${transaction.txId}-${i}`}
+              key={report.reportId}
               display="flex"
               justifyContent="space-between"
               alignItems="center"
               borderBottom={`4px solid ${colors.primary[500]}`}
               p="15px"
+              onClick={() => window.location.href = `/report/${report.ReportId}`}
+              sx={{ cursor: "pointer", transition: "background-color 0.3s ease" }}
+              _hover={{ backgroundColor: colors.grey[200] }}
             >
-              <Box>
-                <Typography
-                  color={colors.greenAccent[500]}
-                  variant="h5"
-                  fontWeight="600"
-                >
-                  {transaction.txId}
-                </Typography>
-                <Typography color={colors.grey[100]}>
-                  {transaction.user}
+              <Box flex="1">
+                <Typography color={colors.greenAccent[500]} variant="body1" fontWeight="600">
+                  {report.reportTitle}
                 </Typography>
               </Box>
-              <Box color={colors.grey[100]}>{transaction.date}</Box>
-              <Box
-                backgroundColor={colors.greenAccent[500]}
-                p="5px 10px"
-                borderRadius="4px"
-              >
-                ${transaction.cost}
+              <Box backgroundColor={colors.greenAccent[500]} p="5px 10px" borderRadius="4px" color={colors.grey[100]} fontSize="small">
+                {report.reportType}
               </Box>
             </Box>
-          ))} */}
+          ))}
+        </Box>
         </Box>
 
         {/* ROW 3 */}
-        <Box
+        {/* <Box
           gridColumn="span 4"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
@@ -241,7 +309,7 @@ const Dashboard = () => {
             </Typography>
             <Typography>Includes extra misc expenditures and costs</Typography>
           </Box>
-        </Box>
+        </Box> */}
         <Box
           gridColumn="span 4"
           gridRow="span 2"
@@ -252,7 +320,7 @@ const Dashboard = () => {
             fontWeight="600"
             sx={{ padding: "30px 30px 0 30px" }}
           >
-            Sales Quantity
+            Report Type
           </Typography>
           <Box height="250px" mt="-20px">
             <BarChart isDashboard={true} />

@@ -22,9 +22,14 @@ function LoginUserScreen() {
   const {userInfo} = userLogin;
 
   useEffect(() => {
+    const admin = Cookies.get("admin");
     if (userInfo) {
-      navigate('/glo2go/home');
-    }
+      if (admin === "true") {
+        navigate('/glo2go/admin');
+      } else {
+        navigate('/glo2go/home');
+      }
+    } 
   }, [navigate, userInfo]);
 
   axios.defaults.withCredentials = true;

@@ -17,7 +17,12 @@ import {
     TIMELINE_VIEW_REQUEST,
     TIMELINE_VIEW_SUCCESS,
     TIMELINE_VIEW_FAIL,
-    TIMELINE_VIEW_RESET 
+    TIMELINE_VIEW_RESET,
+
+    TIMELINE_GET_REQUEST, 
+    TIMELINE_GET_SUCCESS,
+    TIMELINE_GET_FAIL,
+    TIMELINE_GET_RESET
 } from '../constants/timelineConstants'
 
 export const timelineCreateReducer = (state = { }, action) => {
@@ -79,16 +84,16 @@ export const timelineDeleteReducer = (state = { }, action) => {
 
 export const timelineDetailsReducer = (state = { timelines: [] }, action) => {
     switch (action.type) {
-        case TIMELINE_VIEW_REQUEST:
+        case TIMELINE_GET_REQUEST:
             return { loading: true, timelines: [] };
             
-        case TIMELINE_VIEW_SUCCESS:
+        case TIMELINE_GET_SUCCESS:
             return { loading: false, timelines: action.payload };
 
-        case TIMELINE_VIEW_FAIL:
+        case TIMELINE_GET_FAIL:
             return { loading: false, error: action.payload };
 
-        case TIMELINE_VIEW_RESET:
+        case TIMELINE_GET_RESET:
             return {}
 
         default:

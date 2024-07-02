@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { TextField, Button, Paper, Divider, Grid } from '@material-ui/core';
+import { TextField, Button, Paper, Divider, Grid, MenuItem } from '@material-ui/core';
 import { Typography } from "@mui/material";
 import { useSnackbar } from 'notistack';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -7,63 +7,92 @@ import { Loader } from "../../commons/Loader/Loader";
 import { useSelector, useDispatch } from 'react-redux';
 import { updateTimeline, getTimelineDetails } from '../../../actions/timelinesActions';
 import { TIMELINE_UPDATE_RESET } from '../../../constants/timelineConstants';
+import countryData from '../../timelines/new_timelines/country.json';
+import axios from 'axios';
 
 const UpdateTimeline = () => {
-  const { id } = useParams();
+  const { tableId } = useParams();
   const [title, setTitle] = useState('');
   const [country, setCountry] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [loadin, setLoadin] = useState(false);
+  const [countries, setCountries] = useState([]);
+  const [region, setRegion] = useState('');
 
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const timelineDetails = useSelector(state => state.timelineDetails);
-  const { loading: loadingDetails, error, timeline } = timelineDetails;
+  const { loading, error, timelines } = timelineDetails;
 
   const timelineUpdate = useSelector(state => state.timelineUpdate);
   const { success } = timelineUpdate;
+
+  useEffect(() => {
+    console.log(countryData);
+    const formattedCountryData = countryData.map(country => ({
+      name: country.name.common,
+      code: country.ccn3,
+    })).sort((a, b) => a.name.localeCompare(b.name));
+    setCountries(formattedCountryData);
+  }, []);
+
+  const handleCountryChange = (e) => {
+    const inputCountry = e.target.value;
+    if (countries.find(country => country.name === inputCountry)) {
+      setCountry(inputCountry);
+    } else {
+      setCountry('');
+    }
+  };
+
+  useEffect(() => {
+    dispatch(getTimelineDetails(tableId));
+  }, [dispatch, tableId]);
+
+  useEffect(() => {
+    if (timelines && timelines.TimelineID === tableId) {
+      setTitle(timelines.TimelineTitle);
+      setCountry(timelines.Country);
+      setStartDate(timelines.TimelineStartDate);
+      setEndDate(timelines.TimelineEndDate);
+      setEmail(timelines.TravelerEmail);
+      setRegion(timelines.Region)
+    }
+  }, [timelines, tableId]);
 
   useEffect(() => {
     if (success) {
       enqueueSnackbar('Timeline updated successfully!', { variant: 'success' });
       dispatch({ type: TIMELINE_UPDATE_RESET });
       navigate("/glo2glo/travelplans");
-    } else {
-      if (!timeline?.TimelineTitle || timeline.id !== id) {
-        dispatch(getTimelineDetails(id));
-      } else {
-        setTitle(timeline.TimelineTitle);
-        setCountry(timeline.Country);
-        setStartDate(timeline.TimelineStartDate);
-        setEndDate(timeline.TimelineEndDate);
-      }
     }
-  }, [dispatch, navigate, id, timeline, success, enqueueSnackbar]);
+  }, [success, dispatch, enqueueSnackbar, navigate]);
 
   const handleCancel = () => {
     navigate("/glo2glo/travelplans");
   };
 
   const handleSave = async () => {
-    setLoading(true);
+    setLoadin(true);
     try {
-      dispatch(updateTimeline({ id, title, country, startDate, endDate }));
+      dispatch(updateTimeline(tableId, title, country, startDate, endDate, email, region)); // Assuming you need to send the region
     } catch (error) {
       console.error('Error updating timeline:', error);
       enqueueSnackbar('Network error. Please try again later.', { variant: 'error' });
     } finally {
-      setLoading(false);
+      setLoadin(false);
     }
   };
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <Paper elevation={3} style={{ padding: 16, width: 300 }}>
-        {loadingDetails && <Loader />}
         {loading && <Loader />}
+        {loadin && <Loader />}
         {error && <Typography color="error">{error}</Typography>}
         <Typography
           variant="h5"
@@ -85,10 +114,24 @@ const UpdateTimeline = () => {
           margin="normal"
         />
         <TextField
+          select
           label="Country"
           fullWidth
           value={country}
-          onChange={(e) => setCountry(e.target.value)}
+          onChange={handleCountryChange}
+          margin="normal"
+        >
+          {countries.map((country) => (
+            <MenuItem key={country.code} value={country.name}>
+              {country.name}
+            </MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          label="Region"
+          fullWidth
+          value={region}
+          onChange={(e) => setRegion(e.target.value)}
           margin="normal"
         />
         <TextField
@@ -119,7 +162,7 @@ const UpdateTimeline = () => {
             variant="outlined"
             color="secondary"
             onClick={handleCancel}
-            disabled={loading || loadingDetails}
+            disabled={loading || loadin}
           >
             Cancel
           </Button>
@@ -127,7 +170,7 @@ const UpdateTimeline = () => {
             variant="contained"
             color="primary"
             onClick={handleSave}
-            disabled={loading || loadingDetails}
+            disabled={loading || loadin}
           >
             Save
           </Button>

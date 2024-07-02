@@ -1,46 +1,46 @@
+import React, { useEffect, useState } from "react";
 import { ResponsiveLine } from "@nivo/line";
 import { useTheme } from "@mui/material";
 import { tokens } from "../../theme";
+import axios from "axios";
 
 const LineChart = ({ isCustomLineColors = false, isDashboard = false }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const [data, setData] = useState([]);
 
-  const data = [
-    {
-      id: "Cars",
-      color: "hsl(240, 70%, 50%)", // Optional: if you want specific colors for lines
-      data: [
-        { x: "2020", y: 120 },
-        { x: "2021", y: 150 },
-        { x: "2022", y: 170 },
-        { x: "2023", y: 165 },
-        { x: "2024", y: 180 },
-      ],
-    },
-    {
-      id: "Bicycles",
-      color: "hsl(35, 70%, 50%)",
-      data: [
-        { x: "2020", y: 90 },
-        { x: "2021", y: 100 },
-        { x: "2022", y: 105 },
-        { x: "2023", y: 110 },
-        { x: "2024", y: 120 },
-      ],
-    },
-    {
-      id: "Trains",
-      color: "hsl(10, 70%, 50%)",
-      data: [
-        { x: "2020", y: 80 },
-        { x: "2021", y: 85 },
-        { x: "2022", y: 95 },
-        { x: "2023", y: 100 },
-        { x: "2024", y: 90 },
-      ],
-    }
-  ];  
+  useEffect(() => {
+    const fetchPopularSites = async () => {
+      try {
+        const response = await axios.get("https://localhost:7262/api/DashBoard/get-popular-site", {
+          params: { count: 5 }
+        });
+
+        const formattedData = response.data.map((site, index) => ({
+          id: site.siteName,
+          data: [
+            {
+              x: site.rank,
+              y: site.reviewCount,
+              color: getRandomColor(index) // Assign random color
+            }
+          ]
+        }));
+
+        setData(formattedData);
+      } catch (error) {
+        console.error("Error fetching popular sites:", error);
+      }
+    };
+
+    fetchPopularSites();
+  }, []);
+
+  // Function to generate random color
+  const getRandomColor = (index) => {
+    const color = Math.floor(Math.random() * 16777215).toString(16); // Random hex color
+    return `#${color}`;
+  };
 
   return (
     <ResponsiveLine
@@ -78,14 +78,14 @@ const LineChart = ({ isCustomLineColors = false, isDashboard = false }) => {
           },
         },
       }}
-      colors={isDashboard ? { datum: "color" } : { scheme: "nivo" }} // added
+      colors={data[0]?.data.map(item => item.color)} // Assign random colors
       margin={{ top: 50, right: 110, bottom: 50, left: 60 }}
       xScale={{ type: "point" }}
       yScale={{
         type: "linear",
         min: "auto",
         max: "auto",
-        stacked: true,
+        stacked: false,
         reverse: false,
       }}
       yFormat=" >-.2f"
@@ -97,17 +97,17 @@ const LineChart = ({ isCustomLineColors = false, isDashboard = false }) => {
         tickSize: 0,
         tickPadding: 5,
         tickRotation: 0,
-        legend: isDashboard ? undefined : "transportation", // added
+        legend: isDashboard ? undefined : "Sites",
         legendOffset: 36,
         legendPosition: "middle",
       }}
       axisLeft={{
         orient: "left",
-        tickValues: 5, // added
+        tickValues: 5,
         tickSize: 3,
         tickPadding: 5,
         tickRotation: 0,
-        legend: isDashboard ? undefined : "count", // added
+        legend: isDashboard ? undefined : "Review Count",
         legendOffset: -40,
         legendPosition: "middle",
       }}

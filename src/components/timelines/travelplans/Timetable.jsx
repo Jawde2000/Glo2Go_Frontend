@@ -56,7 +56,8 @@ const GooglePlacesTextField = ({ label, value, onChange }) => {
       }
 
       const autocomplete = new window.google.maps.places.Autocomplete(textFieldRef.current, {
-        types: ['(regions)'],
+        types: ['(regions)'], // Limit results to regions (administrative areas)
+        fields: ['formatted_address'], // Specify which fields to return
       });
 
       autocomplete.addListener('place_changed', () => {
@@ -89,6 +90,7 @@ const GooglePlacesTextField = ({ label, value, onChange }) => {
     />
   );
 };
+
 
 const CustomEditor = ({ scheduler, onCreateEvent, onUpdateEvent, onDeleteEvent }) => {
   const event = scheduler.edited;
@@ -250,6 +252,7 @@ const Timetable = () => {
   const [endDate, setEndDate] = useState(new Date(startDateParam));
   const [startDateDisplay, setStartDateDisplay] = useState();
   const [endDateDisplay, setEndDateDisplay] = useState();
+  const [isPast, setPast] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [weatherData, setWeatherData] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
@@ -264,8 +267,13 @@ const Timetable = () => {
   const { loading, events } = eventGet;
   const { success: createSuccess, event: message } = eventCreate;
   const { success: deleteSuccess, event: messageDelete } = eventCreate;
+  const [historicalData, setHistoricalData] = useState([]);
+  const [isHistoricalModalOpen, setIsHistoricalModalOpen] = useState(false);
   const dispatch = useDispatch();
   const token = Cookies.get('token');
+  const timeDiff = Math.abs(endDate.getTime() - startDate.getTime());
+  const numDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+  const cnt = numDays * 8; // 8 data points per day
 
   const getPreviousSaturday = (date) => {
     const day = date.getDay();
@@ -275,7 +283,19 @@ const Timetable = () => {
   };
 
   useEffect(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const forecastDateStart = new Date(startDate);
+    const forecastDateEnd = new Date(endDate);
+
     dispatch(fetchEvents(timetableID));
+
+    if (forecastDateStart < today || forecastDateEnd < today) {
+      setPast(true);
+    } else {
+      setPast(false);
+    }
+
     setFetchedEvent(events);
     dispatch({ type: EVENT_DELETE_RESET });  // Reset the delete success state
     console.log(events);
@@ -333,24 +353,47 @@ const Timetable = () => {
   const handleForecastClick = async () => {
     const data = await fetchWeatherData(startDate, endDate, country, region);
     setWeatherData(data);
+    console.log(weatherData);
     setIsModalOpen(true);
   };
 
   const fetchWeatherData = async (startDate, endDate, country, region) => {
-    const API_KEY = 'YOUR_OPENWEATHERMAP_API_KEY';
+    const API_KEY = '8d9e7d33074f30d15e4fbc345efa073f';
     const startDateTimestamp = Math.floor(startDate.getTime() / 1000);
     const endDateTimestamp = Math.floor(endDate.getTime() / 1000);
-
+  
     try {
-      const response = await axios.get(`https://api.openweathermap.org/data/2.5/forecast`, {
+      // Step 1: Get latitude and longitude using the Geocoding API
+      const geoResponse = await axios.get(`https://api.openweathermap.org/geo/1.0/direct`, {
         params: {
-          q: `${country},${region}`,
-          units: 'metric',
+          q: `${region},${country}`,
+          limit: 1,
           appid: API_KEY
         }
       });
 
-      const weatherList = response.data.list;
+      console.log(geoResponse);
+  
+      if (geoResponse.data.length === 0) {
+        setError('Failed to fetch geolocation. Please check the country and region name and try again.');
+        return [];
+      }
+  
+      const { lat, lon } = geoResponse.data[0];
+  
+      // Step 2: Fetch weather data using the latitude and longitude
+      const weatherResponse = await axios.get(`https://api.openweathermap.org/data/2.5/forecast`, {
+        params: {
+          lat: lat,
+          lon: lon,
+          cnt: cnt,
+          appid: API_KEY
+        }
+      });
+
+      console.log(weatherResponse);
+  
+      const weatherList = weatherResponse.data.list;
       const filteredWeatherData = weatherList.filter(entry => {
         const entryTimestamp = entry.dt;
         return entryTimestamp >= startDateTimestamp && entryTimestamp <= endDateTimestamp;
@@ -361,10 +404,109 @@ const Timetable = () => {
         temperature: `${entry.main.temp}°C`
       }));
 
+      console.log(filteredWeatherData);
+  
       return filteredWeatherData;
-
+  
     } catch (error) {
-      setError('Failed to fetch weather data. Please check the country name and try again.');
+      setError('Failed to fetch weather data. Please check the country and region name and try again.');
+      return [];
+    }
+  };
+
+  const fetchWeatherDataForYear = async (startDate, endDate, lat, lon, API_KEY) => {
+    const formatDate = (date) => {
+      const d = new Date(date);
+      const year = d.getFullYear();
+      const month = (d.getMonth() + 1).toString().padStart(2, '0');
+      const day = d.getDate().toString().padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+  
+    const getCloudDescription = (cloudPercentage) => {
+      if (cloudPercentage <= 25) {
+        return "clear sky";
+      } else if (cloudPercentage <= 50) {
+        return "scattered clouds";
+      } else if (cloudPercentage <= 75) {
+        return "broken clouds";
+      } else {
+        return "overcast clouds";
+      }
+    };
+  
+    try {
+      const response = await axios.get(`https://api.weatherbit.io/v2.0/history/daily`, {
+        params: {
+          lat: lat,
+          lon: lon,
+          start_date: formatDate(startDate),
+          end_date: formatDate(endDate),
+          key: API_KEY
+        },
+        withCredentials: false
+      });
+  
+      if (response.data.data.length === 0) {
+        return [];
+      }
+  
+      const weatherData = response.data.data;
+      return weatherData.map(data => ({
+        date: data.datetime,
+        weather: getCloudDescription(data.clouds),
+        temperature: data.temp
+      }));
+  
+    } catch (error) {
+      console.error('Failed to fetch historical weather data:', error);
+      return [];
+    }
+  };
+  
+  const fetchHistoricalWeatherData = async (country, region) => {
+    const API_KEY = '9bd7e4fdc4eb4937b1a9deb743816aab';
+    const OPEN_API_KEY = '8d9e7d33074f30d15e4fbc345efa073f';
+  
+    try {
+      const geoResponse = await axios.get(`https://api.openweathermap.org/geo/1.0/direct`, {
+        params: {
+          q: `${region},${country}`,
+          limit: 1,
+          appid: OPEN_API_KEY
+        },
+        withCredentials: false
+      });
+  
+      if (geoResponse.data.length === 0) {
+        setError('Failed to fetch geolocation. Please check the country and region name and try again.');
+        return [];
+      }
+  
+      const { lat, lon } = geoResponse.data[0];
+      const weatherData = [];
+
+      console.log(startDate);
+      console.log(endDate);
+  
+      for (let year = startDate.getFullYear() - 1; year >= startDate.getFullYear() - 8; year--) {
+        const newStartDate = new Date(startDate);
+        const newEndDate = new Date(endDateParam);
+  
+        newStartDate.setFullYear(year);
+        newEndDate.setFullYear(year);
+
+        newEndDate.setDate(newEndDate.getDate() + 1);
+  
+        const dataForYear = await fetchWeatherDataForYear(newStartDate, newEndDate, lat, lon, API_KEY);
+        weatherData.push(...dataForYear);
+      }
+
+      console.log(weatherData);
+      return weatherData;
+  
+    } catch (error) {
+      setError('Failed to fetch weather data. Please check the country and region name and try again.');
       return [];
     }
   };
@@ -383,8 +525,32 @@ const Timetable = () => {
     setCurrentPage(prevPage => Math.min(prevPage + 1, Math.ceil(weatherData.length / itemsPerPage) - 1));
   };
 
+  const handlePreviousPageHistorical = () => {
+    setCurrentPage(prevPage => Math.max(prevPage - 1, 0));
+  };
+
+  const handleNextPageHistorical = () => {
+    setCurrentPage(prevPage => Math.min(prevPage + 1, Math.ceil(historicalData.length / itemsPerPage) - 1));
+  };
+
+
+  const handleHistoricalClick = async () => {
+    console.log(startDate);
+    console.log(endDate);
+    const data = await fetchHistoricalWeatherData(country, region);
+    setHistoricalData(data);
+    setIsHistoricalModalOpen(true);
+  };
+  
+  const closeHistoricalModal = () => {
+    setIsHistoricalModalOpen(false);
+    setError(null);
+    setCurrentPage(0);
+  };
+
   const startIndex = currentPage * itemsPerPage;
   const displayedData = weatherData.slice(startIndex, startIndex + itemsPerPage);
+  const displayedHistoricalData = historicalData.slice(startIndex, startIndex + itemsPerPage);
 
   const navigateBack = () => {
     const newStartDate = new Date(startDate);
@@ -426,8 +592,26 @@ const Timetable = () => {
     return `${startFormatted} - ${endFormatted}`;
   };
 
-  const handleEventDrop = (event) => {
-    console.log('Event dropped:', event);
+  const handleEventDrop = async (event, droppedOn, updatedEvent, originalEvent) => {
+    try {
+      // Create the updated event object with the new start and end times
+      const updatedEventData = {
+        ...updatedEvent,
+        start: new Date(updatedEvent.start),
+        end: new Date(updatedEvent.end),
+      };
+  
+      // Dispatch the action to update the event in the backend
+      await dispatch(updateEvent(updatedEventData));
+  
+      // Return the updated event to update the state internally
+      return updatedEventData;
+    } catch (error) {
+      console.error("Error updating event:", error);
+      // Optionally handle the error, e.g., by showing a notification
+      // Return the original event if the update fails
+      return originalEvent;
+    }
   };
 
   const formatEvents = (events) => {
@@ -467,8 +651,13 @@ const Timetable = () => {
       <IconButton onClick={() => window.history.back()} sx={{ mb: 2 }}>
         <ArrowBackIcon />
       </IconButton>
-      <Button variant="contained" color="primary" onClick={handleForecastClick}>
-        Forecast Weather
+      {!isPast && (
+        <Button variant="contained" color="primary" onClick={handleForecastClick}>
+          Forecast Weather
+        </Button>
+      )}
+      <Button variant="contained" color="secondary" onClick={handleHistoricalClick} style={{ marginLeft: '10px' }}>
+        Historical Weather
       </Button>
       <Grid container sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
@@ -507,6 +696,7 @@ const Timetable = () => {
         />}
         onDelete={handleDeleteEvent}
         selectedDate={selectedDate}
+        onEventDrop={handleEventDrop}
         events={formatEvents(events)}
         editable={true}
         deletable={true}
@@ -529,26 +719,31 @@ const Timetable = () => {
           {error ? (
             <Typography color="error">{error}</Typography>
           ) : (
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Time</TableCell>
-                  <TableCell>Weather</TableCell>
-                  <TableCell>Temperature</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {displayedData.map((day, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{day.date}</TableCell>
-                    <TableCell>{day.time}</TableCell>
-                    <TableCell>{day.weather}</TableCell>
-                    <TableCell>{day.temperature}</TableCell>
+            <>
+              <Typography variant="body2" color="textSecondary" gutterBottom>
+                The weather forecast is only available for the duration in 5 days.
+              </Typography>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Time</TableCell>
+                    <TableCell>Weather</TableCell>
+                    <TableCell>Temperature</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHead>
+                <TableBody>
+                  {displayedData.map((day, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{day.date}</TableCell>
+                      <TableCell>{day.time}</TableCell>
+                      <TableCell>{day.weather}</TableCell>
+                      <TableCell>{day.temperature}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </>
           )}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
             <IconButton onClick={handlePreviousPage} disabled={currentPage === 0}>
@@ -558,6 +753,52 @@ const Timetable = () => {
               Page {currentPage + 1} of {Math.ceil(weatherData.length / itemsPerPage)}
             </Typography>
             <IconButton onClick={handleNextPage} disabled={currentPage === Math.ceil(weatherData.length / itemsPerPage) - 1}>
+              <ArrowForward />
+            </IconButton>
+          </Box>
+        </Box>
+      </Modal>
+      <Modal
+        open={isHistoricalModalOpen}
+        onClose={closeHistoricalModal}
+        aria-labelledby="historical-modal-title"
+        aria-describedby="historical-modal-description"
+      >
+        <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4 }}>
+          <Typography id="historical-modal-title" variant="h6" component="h2">
+            Historical Weather for {country}, {region}
+          </Typography>
+          <Button onClick={closeHistoricalModal} sx={{ float: 'right', marginTop: '-40px', marginRight: '-20px' }}>Close</Button>
+          {error ? (
+            <Typography color="error">{error}</Typography>
+          ) : (
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Date</TableCell>
+                  <TableCell>Weather</TableCell>
+                  <TableCell>Temperature</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {displayedHistoricalData.map((day, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{day.date}</TableCell>
+                    <TableCell>{day.weather}</TableCell>
+                    <TableCell>{day.temperature}°C</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+            <IconButton onClick={handlePreviousPageHistorical} disabled={currentPage === 0}>
+              <ArrowBack />
+            </IconButton>
+            <Typography>
+              Page {currentPage + 1} of {Math.ceil(historicalData.length / itemsPerPage)}
+            </Typography>
+            <IconButton onClick={handleNextPageHistorical} disabled={currentPage === Math.ceil(historicalData.length / itemsPerPage) - 1}>
               <ArrowForward />
             </IconButton>
           </Box>

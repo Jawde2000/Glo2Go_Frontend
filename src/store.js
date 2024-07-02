@@ -4,18 +4,20 @@ import storage from 'redux-persist/lib/storage'; // defaults to localStorage for
 import { thunk } from 'redux-thunk';
 import { composeWithDevTools } from 'redux-devtools-extension';
 import Cookies from 'js-cookie';
-import { userLoginReducer, tokenValidationReducer, userRegisterReducer } from './reducers/userReducers';
-import { timelineCreateReducer, timelineDeleteReducer, timelineUpdateReducer, timelineListReducer } from './reducers/timelineReducers';
+import { userLoginReducer, tokenValidationReducer, userRegisterReducer, userUpdateReducer } from './reducers/userReducers';
+import { timelineCreateReducer, timelineDeleteReducer, timelineUpdateReducer, timelineListReducer, timelineDetailsReducer } from './reducers/timelineReducers';
 import { siteListReducer, siteDeleteReducer, siteUpdateReducer, singleSiteReducer, randomSiteReducer } from './reducers/siteReducers';
 import { eventCreateReducer, eventDeleteReducer, eventGetReducer, eventUpdateReducer } from './reducers/eventReducers';
 const reducer = combineReducers({
     userLogin: userLoginReducer,
     userRegister: userRegisterReducer,
+    userUpdate: userUpdateReducer,
     tokenValidation: tokenValidationReducer,
     timelineCreate: timelineCreateReducer, 
     timelineDelete: timelineDeleteReducer,
     timelineUpdate: timelineUpdateReducer,
     timelineList: timelineListReducer,
+    timelineDetails: timelineDetailsReducer,
     siteList: siteListReducer, 
     siteDelete: siteDeleteReducer, 
     siteUpdate: siteUpdateReducer, 
