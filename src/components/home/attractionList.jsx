@@ -16,20 +16,14 @@ function AttractionsList() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(6);  // Customize based on your layout
   const [searchTerm, setSearchTerm] = useState('');
-  const [addressFilter, setAddressFilter] = useState('');
   const [feeRange, setFeeRange] = useState([0, 100]);
-  const [ratingFilter, setRatingFilter] = useState(0);
-  const [operatingHourFilter, setOperatingHourFilter] = useState('');
   const [country, setCountry] = useState('');
   const [countries, setCountries] = useState([]);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
 
   const [appliedFilters, setAppliedFilters] = useState({
     searchTerm: '',
-    addressFilter: '',
     feeRange: [0, 100],
-    ratingFilter: 0,
-    operatingHourFilter: '',
     country: ''
   });
 
@@ -52,22 +46,32 @@ function AttractionsList() {
   }, []);
 
   useEffect(() => {
-    fetch('https://localhost:7262/api/Site/ViewSites')
-      .then(response => {
+    const fetchSites = async () => {
+      try {
+        const response = await fetch('https://localhost:7262/api/Site/ViewSites');
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
-        return response.json();
-      })
-      .then(data => {
-        setSites(data);
+        const data = await response.json();
+        
+        // Fetch images for each site and add imageUrl to each site
+        const sitesWithImages = await Promise.all(data.map(async (site) => {
+          const fullAddress = `${site.siteName}, ${site.siteAddress}`;
+          var imageUrl = await fetchImage(fullAddress);
+          imageUrl = imageUrl.replace('https://images.unsplash.com/', '');
+          return { ...site, imageUrl };
+        }));
+
+        setSites(sitesWithImages);
         setLoading(false);
-      })
-      .catch(error => {
+      } catch (error) {
         console.error('Error fetching sites:', error);
         setError(error.message);
         setLoading(false);
-      });
+      }
+    };
+
+    fetchSites();
   }, []);
 
   const handleChangePage = (event, newPage) => {
@@ -99,10 +103,7 @@ function AttractionsList() {
   const handleApplyFilters = () => {
     setAppliedFilters({
       searchTerm,
-      addressFilter,
       feeRange,
-      ratingFilter,
-      operatingHourFilter,
       country
     });
     handleCloseFilterModal();
@@ -110,44 +111,47 @@ function AttractionsList() {
 
   const handleClearFilters = () => {
     setSearchTerm('');
-    setAddressFilter('');
-    setFeeRange([0, 100]);
-    setRatingFilter(0);
-    setOperatingHourFilter('');
+    setFeeRange([0, 500]);
     setCountry('');
     setAppliedFilters({
       searchTerm: '',
-      addressFilter: '',
       feeRange: [0, 100],
-      ratingFilter: 0,
-      operatingHourFilter: '',
       country: ''
     });
   };
 
   const filteredSites = sites.filter(site => {
-    const fee = parseInt(site.siteFee.replace('$', ''), 10);
-    return (
-      site.siteName.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase()) &&
-      site.siteCountry.toLowerCase().includes(appliedFilters.country.toLowerCase()) &&
-      site.siteAddress.toLowerCase().includes(appliedFilters.addressFilter.toLowerCase()) &&
-      (fee >= appliedFilters.feeRange[0] && fee <= appliedFilters.feeRange[1]) &&
-      site.siteRating >= appliedFilters.ratingFilter &&
-      site.siteOperatingHour.toLowerCase().includes(appliedFilters.operatingHourFilter.toLowerCase())
-    );
-  });
-
-  const filterSites = (searchValue) => {
-    const filtered = sites.filter(site =>
-      site.siteName.toLowerCase().includes(searchValue.toLowerCase())
-    );
-    setSites(filtered.slice(0, rowsPerPage)); // Assuming rowsPerPage is defined in your component
-  };
+    const fee = site.siteFee.toLowerCase().replace('$', '').trim(); // Convert fee to lowercase and remove $ sign
   
+    // Check if fee is numeric or "free"
+    const isFree = fee === "free" || fee === "0" || fee === "0.00"; // Consider different formats of "free"
+  
+    const feeValue = isFree ? 0 : parseInt(fee, 10); // Convert fee to integer if it's not "free"
+  
+    const matchesSearch = site.siteName.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase());
+    const matchesCountry = site.siteCountry.toLowerCase().includes(appliedFilters.country.toLowerCase());
+    const matchesFeeRange = (feeValue >= appliedFilters.feeRange[0] && feeValue <= appliedFilters.feeRange[1]);
+  
+    return matchesSearch && matchesCountry && matchesFeeRange;
+  });
+  
+
+  const fetchImage = async (location) => {
+    const url = `https://api.unsplash.com/search/photos?page=1&query=${location}&client_id=-sBSX_hBXiEbE8nTDn6_UljGHb6bMMWw_6y10rK9Wl8`;
+    const response = await fetch(url);
+    const data = await response.json();
+    return data.results[0].urls.regular;
+  };
 
   const currentData = filteredSites.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
-  if (loading) return <CircularProgress color="secondary" />;
+  if (loading) {
+    return (
+      <Container maxWidth="lg" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '70vh' }}>
+        <CircularProgress color="secondary" />
+      </Container>
+    );
+  }
   if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
@@ -159,25 +163,6 @@ function AttractionsList() {
         Sites
       </Typography>
       <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
-      <TextField
-          label="Search by Name"
-          variant="outlined"
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            filterSites(e.target.value); // Add this line to filter sites immediately
-          }}
-          sx={{ marginRight: 2 }}
-          InputProps={{
-            endAdornment: searchTerm && (
-              <InputAdornment position="end">
-                <IconButton onClick={() => setSearchTerm('')}>
-                  <ClearIcon />
-                </IconButton>
-              </InputAdornment>
-            )
-          }}
-        />
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <Button variant="outlined" color="primary" onClick={handleOpenFilterModal}>
             Open Filters
@@ -205,7 +190,7 @@ function AttractionsList() {
               <CardMedia
                 component="img"
                 height="200"
-                image={site.sitePics?.[0] || '/static/images/placeholder.jpg'}
+                image={"https://images.unsplash.com/" + site.imageUrl || '/static/images/placeholder.jpg'}
                 alt={site.siteName || 'Attraction Image'}
               />
               <CardContent sx={{ flexGrow: 1 }}>
@@ -219,7 +204,14 @@ function AttractionsList() {
                   <strong>Operating Hours:</strong> {site.siteOperatingHour}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Country:</strong> #{site.siteCountry.replace(/\s+/g, '').toLowerCase()}
+                  <strong>Fee:</strong> {site.siteFee}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Country:</strong> 
+                  <Chip
+                    label={"#" + site.siteCountry.replace(/\s+/g, '').toLowerCase()}
+                    sx={{ marginRight: 1 }}
+                  />
                 </Typography>
               </CardContent>
               <CardActions sx={{ justifyContent: 'center' }}>
@@ -254,7 +246,7 @@ function AttractionsList() {
           </Typography>
           <TextField
             select
-            label="Region"
+            label="Countries"
             fullWidth
             value={country}
             onChange={handleCountryChange}
@@ -286,28 +278,6 @@ function AttractionsList() {
               onChange={(e) => setFeeRange([feeRange[0], parseInt(e.target.value, 10)])}
             />
           </Box>
-          <TextField
-            label="Filter by Address"
-            variant="outlined"
-            value={addressFilter}
-            onChange={(e) => setAddressFilter(e.target.value)}
-            sx={{ marginTop: 2 }}
-          />
-          <TextField
-            label="Filter by Rating"
-            variant="outlined"
-            type="number"
-            value={ratingFilter}
-            onChange={(e) => setRatingFilter(parseInt(e.target.value, 10))}
-            sx={{ marginTop: 2 }}
-          />
-          <TextField
-            label="Filter by Operating Hour"
-            variant="outlined"
-            value={operatingHourFilter}
-            onChange={(e) => setOperatingHourFilter(e.target.value)}
-            sx={{ marginTop: 2 }}
-          />
           <Button onClick={handleApplyFilters} color="primary" variant="contained" sx={{ mt: 2 }}>
             Apply Filters
           </Button>

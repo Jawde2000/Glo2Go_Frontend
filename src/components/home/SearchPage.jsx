@@ -12,6 +12,7 @@ import { useParams, Link } from 'react-router-dom'; // Import Link
 import axios from 'axios';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 
 const SearchPage = () => {
   const { searchItem } = useParams();
@@ -56,19 +57,21 @@ const SearchPage = () => {
             Reviews
           </Typography>
           {searchResults.reviews.map((review, index) => (
+            <Link to={`/glo2go/AttractionsList/${review.reviewSite}`} style={{ textDecoration: 'none' }}>
             <Card key={`review-${index}`} style={{ marginBottom: 10 }}>
               <CardContent>
                 <Typography variant="body1" component="p">
-                  Review Traveler: {review.ReviewTraveler}
+                  Review Traveler: {review.reviewTraveler}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
-                  Review Site: {review.ReviewSite}
+                  Review Site: {review.reviewSite}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
-                  Traveler Email: {review.TravelerEmail}
+                  Time Review: {format(new Date(review.dateTime), 'dd MMM yyyy HH:mm:ss')}
                 </Typography>
               </CardContent>
             </Card>
+          </Link>
           ))}
         </Grid>
 

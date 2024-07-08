@@ -3,11 +3,11 @@ import { TextField, Button, Paper, Divider, Grid, MenuItem } from '@material-ui/
 import { Typography } from "@mui/material";
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
-import { Loader } from "../../commons/Loader/Loader";
+import {Loader} from "../../commons/Loader/Loader.jsx";
 import { useSelector, useDispatch } from 'react-redux';
 import { createTimeline } from '../../../actions/timelinesActions';
 import { TIMELINE_CREATE_RESET } from '../../../constants/timelineConstants';
-import countryData from '../../commons/country.json'
+import countryData from '../../commons/country.json';
 import axios from 'axios';
 
 const NewTimelines = () => {
@@ -32,38 +32,19 @@ const NewTimelines = () => {
 
   useEffect(() => {
     if (success) {
-      alert(timeline.message);
+      enqueueSnackbar(timeline.message, { variant: 'success' });
       dispatch({ type: TIMELINE_CREATE_RESET });
       navigate("/glo2glo/travelplans");
     }
-  }, [navigate, success]);
+  }, [navigate, success, dispatch, enqueueSnackbar, timeline]);
 
   useEffect(() => {
-    // Use the imported country data
     const formattedCountryData = countryData.map(country => ({
       name: country.name.common,
       code: country.cca2,
-    })).sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
+    })).sort((a, b) => a.name.localeCompare(b.name));
     setCountries(formattedCountryData);
   }, []);
-
-  useEffect(() => {
-    // Fetch regions when the country changes
-    const fetchRegions = async (countryCode) => {
-      try {
-        const response = await axios.get(`https://api.worldbank.org/v2/country/${countryCode}/region?format=json`);
-        console.log(response.data); // Log the response data
-        setRegions(response.data[1]);
-      } catch (error) {
-        console.error('Error fetching regions:', error);
-        setRegions([]);
-      }
-    };    
-
-    if (country) {
-      fetchRegions(country);
-    }
-  }, [country]);
 
   const handleSave = async () => {
     setLoading(true);
@@ -144,10 +125,9 @@ const NewTimelines = () => {
         <TextField
           label="Region"
           fullWidth
-          value={regions}
+          value={region}
           onChange={(e) => setRegion(e.target.value)}
           margin="normal"
-          disabled={!country}
         />
         <Grid container alignItems="center" style={{ margin: '20px 0' }}>
           <Grid item xs>
@@ -178,4 +158,3 @@ const NewTimelines = () => {
 };
 
 export default NewTimelines;
-

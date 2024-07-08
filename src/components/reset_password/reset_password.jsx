@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Container, Typography, Paper, Box, CircularProgress } from '@mui/material';
-import { Button, TextField} from '@material-ui/core';
+import axios from 'axios';
+import { Container, Typography, Paper, Box, CircularProgress, IconButton } from '@mui/material';
+import { Button, TextField } from '@material-ui/core';
 import { useNavigate } from 'react-router-dom';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 function ForgotPasswordScreen() {
     const [email, setEmail] = useState('');
@@ -17,22 +19,20 @@ function ForgotPasswordScreen() {
 
     const handleSubmit = async (event) => {
         event.preventDefault();
+        console.log(email);
         setLoading(true);
         try {
-            const response = await fetch('https://localhost:7262/api/Authentication/forgotpassword', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ Email: email }),
+            const response = await axios.post('https://localhost:7262/api/Authentication/passwordreset', {
+                email: email
             });
-    
-            if (response.ok) {
+
+            console.log(response);
+
+            if (response.data.flag) {
                 setResponseEmail(response.data.message);
                 alert(response.data.message);
                 setLoading(false);
                 setSubmitted(true);
-                setTimeout(() => navigate('/glo2go/login'), 3000); // Redirect to login after 3 seconds
             } else {
                 setLoading(false);
                 alert(response.data.message);
@@ -42,7 +42,6 @@ function ForgotPasswordScreen() {
             alert('An error occurred, please try again later.');
         }
     };
-    
 
     if (submitted) {
         return (
@@ -61,23 +60,26 @@ function ForgotPasswordScreen() {
     }
 
     return (
-        <Container component="main" maxWidth="xs" style={{ height: "100vh" }}>
+        <Container component="main" maxWidth="lg" style={{ height: "100vh" }}>
+            <IconButton onClick={() => navigate(-1)} sx={{ mb: 2 }}>
+                <ArrowBackIcon />
+            </IconButton>
             <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%">
                 <Paper elevation={6} style={{ padding: 20, width: '100%', maxWidth: 400 }}>
-                <Typography
-                  component="h4"
-                  variant="h5"
-                  sx={{
-                      fontSize: '1rem',
-                      fontStyle: 'italic',
-                      fontFamily: 'Cursive',
-                      color: 'deepPurple',
-                      textAlign: 'center',       // Centers the text horizontally
-                      marginBottom: 4,
-                  }}
-                >
-                  Forgot your password? No worries, click here to reset it.
-                </Typography>
+                    <Typography
+                        component="h4"
+                        variant="h5"
+                        sx={{
+                            fontSize: '1rem',
+                            fontStyle: 'italic',
+                            fontFamily: 'Cursive',
+                            color: 'deepPurple',
+                            textAlign: 'center',       // Centers the text horizontally
+                            marginBottom: 4,
+                        }}
+                    >
+                        Forgot your password? No worries, click here to reset it.
+                    </Typography>
                     <form style={{ width: '100%' }} onSubmit={handleSubmit}>
                         <TextField
                             variant="outlined"
@@ -89,7 +91,7 @@ function ForgotPasswordScreen() {
                             autoComplete="email"
                             autoFocus
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            onChange={handleEmailChange}
                         />
                         <Button
                             type="submit"

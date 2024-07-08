@@ -112,7 +112,6 @@ export const login = (email, password) => async (dispatch) => {
     }, { withCredentials: true });
 
     if (response2.data.flag) {
-      alert(response2.data.message)
       const response = await axios.post('https://localhost:7262/api/authentication/login', {
         email: email,
         password: password,
@@ -133,6 +132,7 @@ export const login = (email, password) => async (dispatch) => {
   } catch (error) {
     try {
       console.log("Enter User Login Response");
+      console.log(email, password);
       const response = await axios.post('https://localhost:7262/api/authentication/login', {
         email: email,
         password: password,
@@ -157,8 +157,6 @@ export const login = (email, password) => async (dispatch) => {
           type: USER_LOGIN_SUCCESS,
           payload: response.data
         });
-
-        alert(response.data.message);
       }
     } catch (error) {
       console.error("Error during login:", error.response);
@@ -166,7 +164,6 @@ export const login = (email, password) => async (dispatch) => {
         type: USER_LOGIN_FAIL,
         payload: error.response?.data?.message || error.message
       });
-      alert("Login error: " + (error.response?.data?.message || error.message));
     }
   }
 };
@@ -196,7 +193,6 @@ export const register = (email, password, confirmPassword) => async (dispatch) =
           payload: error.response?.data?.message || error.message,
       });
       console.error("Error during registration:", error);
-      alert("Registration error: " + (error.response?.data?.message || error.message));
   }
 };
 
@@ -222,10 +218,11 @@ export const registerAdmin = (email, password, confirmPassword, isAdmin) => asyn
     }, config);
 
     console.log(response);
-
+    console.log(response.data.flag);
     if (response.data.flag) {
-      alert(response.data.message);
       dispatch({ type: USER_REGISTER_SUCCESS, payload: response.data });
+    } else if (!response.data.flag) {
+      dispatch({ type: USER_REGISTER_FAIL, payload: response.data });
     }
 
   } catch (error) {
@@ -234,7 +231,6 @@ export const registerAdmin = (email, password, confirmPassword, isAdmin) => asyn
       payload: error.response?.data?.message || error.message,
     });
     console.error("Error during registration:", error);
-    alert("Registration error: " + (error.response?.data?.message || error.message));
   }
 };
 
@@ -262,7 +258,6 @@ export const updateUserProfile = (userUpdateDTO) => async (dispatch, getState) =
     console.log(data)
 
     if (data.flag) {
-      alert(data.message);
       dispatch({type: USER_UPDATE_RESET, message: data.message});
     }
   } catch (error) {

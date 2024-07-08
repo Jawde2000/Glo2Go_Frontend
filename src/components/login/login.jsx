@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import {
   Container, Typography, Paper, Avatar, TextField, Button, IconButton,
-  Grid, CssBaseline, Card, CardContent, CardMedia, Box, CircularProgress, CardActions, Rating, InputAdornment
+  Grid, CssBaseline, Card, CardContent, CardMedia, Box, CircularProgress, CardActions, Rating, InputAdornment,
+  Dialog, DialogTitle, DialogContent, DialogActions
 } from "@mui/material";
 import SearchIcon from '@mui/icons-material/Search';
 import { Link } from "react-router-dom";
@@ -11,6 +12,7 @@ import { checkValidToken } from '../../actions/userActions';
 import { styled } from '@mui/material/styles';
 import CardComponent from "../commons/CardComponent";
 import { useNavigate } from 'react-router-dom';
+import axios from "axios";
 
 const StyledTextField = styled(TextField)({
   '& .MuiOutlinedInput-root': {
@@ -32,11 +34,16 @@ const StyledTextField = styled(TextField)({
   },
 });
 
+const MAX_DESC_LENGTH = 100; // Maximum characters for site description
+
 function LoginScreen() {
   const [openAddTrip, setOpenAddTrip] = useState(false);
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const [randomAttraction, setRandomAttraction] = useState(null);
+  const [popularLocation, setPopularLocation] = useState([]);
+  const [mightLikeThese, setMightLikeThis] = useState([]);
+  const [topX, setTopX] = useState([]);
   const [userReviews, setUserReviews] = useState([]);
   const [weather, setWeather] = useState(null);
   const [backgroundImage, setBackgroundImage] = useState('');
@@ -46,9 +53,21 @@ function LoginScreen() {
   const { isValid } = tokenValidation;
   const dispatch = useDispatch();
   const token = Cookies.get('token');
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleSearch = () => {
-    navigate(`/glo2go/search/${encodeURIComponent(searchTerm)}`);
+    if (searchTerm.trim() !== '') {
+      navigate(`/glo2go/search/${encodeURIComponent(searchTerm)}`);
+    } else {
+      // Optionally show an error message or disable search
+     setDialogOpen(true);
+    }
+  };
+
+  const handleKeyPress = (event) => {
+    if (event.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   useEffect(() => {
@@ -57,52 +76,12 @@ function LoginScreen() {
     }
   }, [token]);
 
-  const moreThingsToDo = [
-    { name: "Safari Adventure", image: "safari.jpg", description: "Experience the wild like never before." },
-    { name: "City Walking Tour", image: "city_tour.jpg", description: "Explore the city's hidden gems." },
-    { name: "Mountain Hiking", image: "hiking.jpg", description: "Conquer the peaks with our guided hikes." },
-  ];
-  
-  const topExperiences = [
-    { name: "Wine Tasting", image: "wine_tasting.jpg", description: "Sip and savor the finest wines." },
-    { name: "Cultural Dance Show", image: "dance_show.jpg", description: "Enjoy a night of traditional dances." },
-    { name: "Boat Cruise", image: "boat_cruise.jpg", description: "Relax on a scenic boat ride." },
-  ];
-  
-  const topHotels = [
-    { name: "Luxury Beach Resort", image: "luxury_resort.jpg", description: "Unwind in a tropical paradise." },
-    { name: "Mountain Lodge", image: "mountain_lodge.jpg", description: "Stay in the heart of nature." },
-    { name: "City Center Hotel", image: "city_hotel.jpg", description: "Comfort and convenience in the city." },
-  ];
-  
-  const moreToExplore = [
-    { name: "National Park", image: "national_park.jpg", description: "Discover stunning landscapes and wildlife." },
-    { name: "Historical Museum", image: "museum.jpg", description: "Learn about the rich history and culture." },
-    { name: "Theme Park", image: "theme_park.jpg", description: "Fun and excitement for the whole family." },
-  ];
-  
-  const topDestinations = [
-    { name: "Paris", image: "paris.jpg", description: "The city of love and lights." },
-    { name: "Tokyo", image: "tokyo.jpg", description: "A blend of tradition and modernity." },
-    { name: "New York", image: "new_york.jpg", description: "The city that never sleeps." },
-  ];
-  
-  const bestOfBest = [
-    { name: "Great Wall of China", image: "great_wall.jpg", description: "One of the wonders of the world." },
-    { name: "Eiffel Tower", image: "eiffel_tower.jpg", description: "Iconic landmark of Paris." },
-    { name: "Machu Picchu", image: "machu_picchu.jpg", description: "Ancient Incan city in the Andes." },
-  ];  
-
-  const upcomingEvents = [
-    { name: "Music Festival", date: "2024-05-30", location: "Beach Resort" },
-    { name: "Culinary Week", date: "2024-06-15", location: "City Center" }
-  ];
-
-  const locationSuggestions = [
-    { name: "Beach Resort", image: "https://imageio.forbes.com/specials-images/imageserve/648f06a6152abcf5ef5e44a9/e125175d2a6f8fed0c71b983c4d1368d/960x0.jpg?format=jpg&width=960" },
-    { name: "Mountain Retreat", image: "https://cf.bstatic.com/xdata/images/hotel/max1024x768/428616199.jpg?k=36f070a2af1036f54cc83c8022b17060d7c59c83a1860f2609b2650610ec9bc1&o=&hp=1" },
-    { name: "Cityscape View", image: "https://img.freepik.com/premium-photo/aerial-view-chicago-skylines-south-sunset_63253-7235.jpg" },
-  ];
+  const truncateDesc = (desc) => {
+    if (desc.length > MAX_DESC_LENGTH) {
+      return `${desc.substring(0, MAX_DESC_LENGTH)}...`;
+    }
+    return desc;
+  };
 
   const getRandomCountry = async () => {
     const url = 'https://restcountries.com/v3.1/all';
@@ -145,19 +124,71 @@ function LoginScreen() {
   }, []);
 
   useEffect(() => {
-    fetch('https://localhost:7262/api/Site/ViewSites')
-      .then(response => response.json())
-      .then(data => {
-        const randomIndex = Math.floor(Math.random() * data.length);
-        setRandomAttraction(data[randomIndex]);
-      })
-      .catch(error => console.error("Error fetching data:", error));
+    const fetchData = async () => {
+      try {
+        // Fetch random attraction
+        const responseAttraction = await axios.get('https://localhost:7262/api/Site/ViewSites');
+        const dataAttraction = responseAttraction.data;
+        const randomIndex = Math.floor(Math.random() * dataAttraction.length);
+        const attraction = dataAttraction[randomIndex];
+        const fullAddress = attraction.siteName + ", " + attraction.siteAddress;
+        const imageUrl = await fetchImage(fullAddress);
+        setRandomAttraction({ ...attraction, imageUrl });
+  
+        // Fetch popular sites
+        const responsePopular = await axios.get('https://localhost:7262/api/Site/TopPopularSites');
+        const dataPopular = responsePopular.data;
+        
+        // Fetch images for each site and add imageUrl to each site
+        const sitesWithImages = await Promise.all(dataPopular.map(async (site) => {
+          const fullAddress = `${site.siteName}, ${site.siteAddress}`;
+          const imageUrl = await fetchImage(fullAddress);
+          return { ...site, imageUrl };
+        }));
 
-    fetch('https://localhost:7262/api/Review/random/site')
-      .then(response => response.json())
-      .then(data => {
+        console.log(sitesWithImages)
+        setPopularLocation(sitesWithImages);
+
+        const responseMight = await axios.get('https://localhost:7262/api/Site/GetRecommendedSites');
+        const dataMight = responseMight.data;
+        
+        // Fetch images for each site and add imageUrl to each site
+        const sitesWithImages2 = await Promise.all(dataMight.map(async (site) => {
+          const fullAddress = `${site.siteName}, ${site.siteAddress}`;
+          const imageUrl = await fetchImage(fullAddress);
+          return { ...site, imageUrl };
+        }));
+
+        console.log(sitesWithImages2)
+        setMightLikeThis(sitesWithImages2);
+
+        const responseX = await axios.get('https://localhost:7262/api/Site/GetRecommendedSites');
+        const dataX = responseX.data;
+        
+        // Fetch images for each site and add imageUrl to each site
+        const sitesWithImages3 = await Promise.all(dataX.map(async (site) => {
+          const fullAddress = `${site.siteName}, ${site.siteAddress}`;
+          const imageUrl = await fetchImage(fullAddress);
+          return { ...site, imageUrl };
+        }));
+
+        console.log(sitesWithImages3)
+        setTopX(sitesWithImages3);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setLoading(false);
+      }
+    };
+  
+    fetchData();
+  
+    // Fetch user reviews
+    axios.get('https://localhost:7262/api/Review/random/site')
+      .then(response => {
+        const data = response.data;
         setUserReviews(data.map(review => ({
-          username: review.travelerEmail.split('@')[0],
+          username: review.travelerEmail,
           rating: review.reviewRating,
           comment: review.reviewTraveler,
           site: review.reviewSite
@@ -165,13 +196,19 @@ function LoginScreen() {
       })
       .catch(error => console.error("Error fetching reviews:", error))
       .finally(() => setLoading(false));
-  }, []);
+  
+  }, []);  
+
 
   const handleOpenAddTrip = () => setOpenAddTrip(true);
   const handleCloseAddTrip = () => setOpenAddTrip(false);
 
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+  };
+
   const fetchImage = async (location) => {
-    const url = `https://api.unsplash.com/search/photos?page=1&query=${location}&client_id=X2qP9e7hrOqy05MiE6DFay0F7BDtWwGrcNYU4CzIV3U`;
+    const url = `https://api.unsplash.com/search/photos?page=1&query=${location}&client_id=-sBSX_hBXiEbE8nTDn6_UljGHb6bMMWw_6y10rK9Wl8`;
     const response = await fetch(url);
     const data = await response.json();
     return data.results[0].urls.regular;
@@ -192,27 +229,28 @@ function LoginScreen() {
         <form sx={{ width: '100%', mt: 1 }}>
         <Typography component="h1" variant="h3" display={'flex'} alignItems={'center'} alignContent={'center'}>Explore the trip!</Typography>
           <Paper sx={{ my: 4, p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <StyledTextField
-                variant="outlined"
-                margin="normal"
-                fullWidth
-                id="search"
-                label="Search destinations, hotels, etc."
-                name="search"
-                autoComplete="off"
-                autoFocus
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={handleSearch}>
-                        <SearchIcon />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
+          <StyledTextField
+            variant="outlined"
+            margin="normal"
+            fullWidth
+            id="search"
+            label="Search destinations, hotels, etc."
+            name="search"
+            autoComplete="off"
+            autoFocus
+            onKeyPress={handleKeyPress}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={handleSearch}>
+                    <SearchIcon />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
           </Paper>
           <CssBaseline />
           <Grid container spacing={2} sx={{ mt: 2 }}>
@@ -222,7 +260,7 @@ function LoginScreen() {
                   <CardContent sx={{ overflow: 'hidden', maxHeight: '300px' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 1 }}>
                       <Avatar sx={{ bgcolor: 'primary.main', marginRight: 1 }}>
-                        {review.username[0]}
+                        {review.username}
                       </Avatar>
                       <Typography variant="body2" color="text.secondary" noWrap>
                         {review.username}
@@ -291,28 +329,34 @@ function LoginScreen() {
                 </>
               )}
             </Box>
-          </Paper>          <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>Explore Popular Locations</Typography>
+          </Paper>          
+          <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>Explore Popular Locations</Typography>
           <Grid container spacing={2}>
-            {locationSuggestions.map((location, index) => (
-              <Grid item xs={12} sm={4} key={index}>
-                <img src={location.image} alt={location.name} style={{ width: '100%', borderRadius: 8 }} />
-                <Typography variant="caption" display="block" gutterBottom>{location.name}</Typography>
-              </Grid>
-            ))}
+          {popularLocation.map((location, index) => (
+            <Grid item xs={12} sm={4} key={index} component={Link} to={`/glo2go/AttractionsList/${location.siteID}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                <img
+                  src={location?.imageUrl}
+                  alt={location?.siteName}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }}
+                />
+              </div>
+              <Typography variant="caption" display="block" gutterBottom>{location?.siteName}</Typography>
+            </Grid>
+          ))}
           </Grid>
-
           {randomAttraction && (
             <Box sx={{ mt: 4, width: '100%' }}>
               <Card>
                 <CardMedia
                   component="img"
                   height="140"
-                  image={randomAttraction.sitePics && randomAttraction.sitePics.length > 0 ? randomAttraction.sitePics[0] : '/static/images/placeholder.jpg'}
+                  image={randomAttraction.imageUrl && randomAttraction.imageUrl.length > 0 ? randomAttraction.imageUrl : '/static/images/placeholder.jpg'}
                   alt={randomAttraction.siteName}
                 />
                 <CardContent>
                   <Typography gutterBottom variant="h6" component="div">{randomAttraction.siteName}</Typography>
-                  <Typography variant="body2" color="text.secondary">{randomAttraction.siteDesc}</Typography>
+                  <Typography variant="body2" color="text.secondary">{truncateDesc(randomAttraction.siteDesc)}</Typography>
                 </CardContent>
                 <CardActions style={{ justifyContent: 'center' }}>
                   <Button size="small" color="primary" component={Link} to="/glo2go/AttractionsList">
@@ -324,21 +368,21 @@ function LoginScreen() {
           )}
           <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>You Might Like These - More Things to Do in the World</Typography>
           <Grid container spacing={2}>
-            {moreThingsToDo.map((activity, index) => (
+            {mightLikeThese.map((activity, index) => (
               <Grid item xs={12} sm={4} key={index}>
                 <Card sx={{ height: '100%' }}>
                   <CardMedia
                     component="img"
                     height="140"
-                    image={activity.image}
-                    alt={activity.name}
+                    image={activity?.imageUrl}
+                    alt={activity?.siteName}
                   />
                   <CardContent>
-                    <Typography gutterBottom variant="h6" component="div">{activity.name}</Typography>
-                    <Typography variant="body2" color="text.secondary">{activity.description}</Typography>
+                    <Typography gutterBottom variant="h6" component="div">{activity?.siteName}</Typography>
+                    <Typography variant="body2" color="text.secondary">{truncateDesc(activity?.siteDesc)}</Typography>
                   </CardContent>
                   <CardActions style={{ justifyContent: 'center' }}>
-                    <Button size="small" color="primary">Learn More</Button>
+                    <Button size="small" color="primary" component={Link} to={`/glo2go/AttractionsList/${activity?.siteID}`}>Learn More</Button>
                   </CardActions>
                 </Card>
               </Grid>
@@ -346,127 +390,39 @@ function LoginScreen() {
           </Grid>
           <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>Top Experiences on Glo2Go</Typography>
           <Grid container spacing={2}>
-            {topExperiences.map((experience, index) => (
+            {topX.map((experience, index) => (
               <Grid item xs={12} sm={4} key={index}>
                 <Card sx={{ height: '100%' }}>
                   <CardMedia
                     component="img"
                     height="140"
-                    image={experience.image}
-                    alt={experience.name}
+                    image={experience?.imageUrl}
+                    alt={experience?.siteName}
                   />
                   <CardContent>
-                    <Typography gutterBottom variant="h6" component="div">{experience.name}</Typography>
-                    <Typography variant="body2" color="text.secondary">{experience.description}</Typography>
+                    <Typography gutterBottom variant="h6" component="div">{experience?.siteName}</Typography>
+                    <Typography variant="body2" color="text.secondary">{truncateDesc(experience?.siteDesc)}</Typography>
                   </CardContent>
                   <CardActions style={{ justifyContent: 'center' }}>
-                    <Button size="small" color="primary">Learn More</Button>
+                    <Button size="small" color="primary" component={Link} to={`/glo2go/AttractionsList/${experience?.siteID}`}>Learn More</Button>
                   </CardActions>
                 </Card>
               </Grid>
             ))}
           </Grid>
-          <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>Stay Somewhere Award-Winning - 2024's Travellers' Choice Awards Best of the Best Hotels</Typography>
-          <Grid container spacing={2}>
-            {topHotels.map((hotel, index) => (
-              <Grid item xs={12} sm={4} key={index}>
-                <Card sx={{ height: '100%' }}>
-                  <CardMedia
-                    component="img"
-                    height="140"
-                    image={hotel.image}
-                    alt={hotel.name}
-                  />
-                  <CardContent>
-                    <Typography gutterBottom variant="h6" component="div">{hotel.name}</Typography>
-                    <Typography variant="body2" color="text.secondary">{hotel.description}</Typography>
-                  </CardContent>
-                  <CardActions style={{ justifyContent: 'center' }}>
-                    <Button size="small" color="primary">Book Now</Button>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-          <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>More to Explore</Typography>
-          <Grid container spacing={2}>
-            {moreToExplore.map((explore, index) => (
-              <Grid item xs={12} sm={4} key={index}>
-                <Card sx={{ height: '100%' }}>
-                  <CardMedia
-                    component="img"
-                    height="140"
-                    image={explore.image}
-                    alt={explore.name}
-                  />
-                  <CardContent>
-                    <Typography gutterBottom variant="h6" component="div">{explore.name}</Typography>
-                    <Typography variant="body2" color="text.secondary">{explore.description}</Typography>
-                  </CardContent>
-                  <CardActions style={{ justifyContent: 'center' }}>
-                    <Button size="small" color="primary">Learn More</Button>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-          <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>Top Destinations for Your Next Holiday</Typography>
-          <Grid container spacing={2}>
-            {topDestinations.map((destination, index) => (
-              <Grid item xs={12} sm={4} key={index}>
-                <Card sx={{ height: '100%' }}>
-                  <CardMedia
-                    component="img"
-                    height="140"
-                    image={destination.image}
-                    alt={destination.name}
-                  />
-                  <CardContent>
-                    <Typography gutterBottom variant="h6" component="div">{destination.name}</Typography>
-                    <Typography variant="body2" color="text.secondary">{destination.description}</Typography>
-                  </CardContent>
-                  <CardActions style={{ justifyContent: 'center' }}>
-                    <Button size="small" color="primary">Learn More</Button>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-          <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>Travellers' Choice Awards Best of the Best</Typography>
-          <Grid container spacing={2}>
-            {bestOfBest.map((place, index) => (
-              <Grid item xs={12} sm={4} key={index}>
-                <Card sx={{ height: '100%' }}>
-                  <CardMedia
-                    component="img"
-                    height="140"
-                    image={place.image}
-                    alt={place.name}
-                  />
-                  <CardContent>
-                    <Typography gutterBottom variant="h6" component="div">{place.name}</Typography>
-                    <Typography variant="body2" color="text.secondary">{place.description}</Typography>
-                  </CardContent>
-                  <CardActions style={{ justifyContent: 'center' }}>
-                    <Button size="small" color="primary">Learn More</Button>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-          <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>Upcoming Events</Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            {upcomingEvents.map((event, index) => (
-              <Typography key={index} sx={{ mt: 1 }}>{event.name} - {event.date} at {event.location}</Typography>
-            ))}
-          </Box>
-          <Box sx={{ mt: 4, width: '100%', px: { xs: 1, sm: 3, md: 10 } }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>Stay Updated with Our Newsletter</Typography>
-            <TextField label="Email Address" variant="outlined" fullWidth sx={{ mb: 2 }} value={email} onChange={(e) => setEmail(e.target.value)} />
-            <Button fullWidth variant="contained" color="primary">Subscribe</Button>
-          </Box>
         </form>
       </Paper>
+      <Dialog open={dialogOpen} onClose={handleCloseDialog}>
+        <DialogTitle>Error</DialogTitle>
+        <DialogContent>
+          Please enter a search term.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }

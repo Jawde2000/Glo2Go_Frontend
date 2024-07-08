@@ -1,17 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
-import { Container, Typography, Paper, Box, CircularProgress, TextField, Button } from '@mui/material';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Container, Typography, Paper, Box, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
+import { Button, TextField } from '@material-ui/core';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
 const ResetPassword = () => {
+    const { token } = useParams();
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [token, setToken] = useState('');
-
-    // Extract the token from the URL
-    useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        setToken(urlParams.get('token'));
-    }, []);
+    const [loading, setLoading] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [dialogMessage, setDialogMessage] = useState('');
+    const navigate = useNavigate();
 
     const handlePasswordChange = (event) => {
         setPassword(event.target.value);
@@ -25,23 +27,44 @@ const ResetPassword = () => {
         event.preventDefault();
 
         if (password !== confirmPassword) {
-            alert('Passwords do not match!');
+            setDialogMessage('Passwords do not match!');
+            setDialogOpen(true);
             return;
         }
 
+        setLoading(true);
+
         try {
-            const response = await axios.post('https://localhost:7262/api/Authentication/resetpassword', {
-                token,
-                password
+            console.log(token);
+            console.log(password);
+            const response = await axios.put('https://localhost:7262/api/Authentication/UpdatePassword', null, {
+                params: {
+                  token: token,
+                  password: password
+                }
             });
 
-            if (response.data.success) {
-                alert('Password reset successful!');
+            console.log(response);
+
+            if (response.data.flag) {
+                setDialogMessage(response.data.message);
+                setSubmitted(true);
             } else {
-                alert('An error occurred, please try again later.');
+                setDialogMessage('An error occurred, please try again later.');
             }
         } catch (error) {
             console.error("Failed to reset password:", error);
+            setDialogMessage('An error occurred, please try again later.');
+        } finally {
+            setDialogOpen(true);
+            setLoading(false);
+        }
+    };
+
+    const handleCloseDialog = () => {
+        setDialogOpen(false);
+        if (submitted) {
+            navigate('/glo2go/login');
         }
     };
 
@@ -57,7 +80,7 @@ const ResetPassword = () => {
                             fontStyle: 'italic',
                             fontFamily: 'Cursive',
                             color: 'deepPurple',
-                            textAlign: 'center',       // Centers the text horizontally
+                            textAlign: 'center',
                             marginBottom: 4,
                         }}
                     >
@@ -92,12 +115,26 @@ const ResetPassword = () => {
                             variant="contained"
                             color="primary"
                             style={{ margin: '20px 0' }}
+                            disabled={loading}
                         >
-                            Reset Password
+                            {loading ? <CircularProgress size={24} color="inherit" /> : 'Reset Password'}
                         </Button>
                     </form>
                 </Paper>
             </Box>
+            <Dialog open={dialogOpen} onClose={handleCloseDialog}>
+                <DialogTitle>{submitted ? "Success" : "Error"}</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        {dialogMessage}
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseDialog} color="primary">
+                        OK
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Container>
     );
 };

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TextField, Button, Paper, Typography, MenuItem, Select, FormControl, InputLabel, FormHelperText } from '@mui/material';
 import { useNavigate } from "react-router-dom";
+import countryData from "../../timelines/new_timelines/country.json"
 // List of some example countries
 const countries = [
   { code: 'US', name: 'United States' },
@@ -12,14 +13,32 @@ const countries = [
 const CreateSiteForm = () => {
   const [site, setSite] = useState({
     siteName: '',
-    siteCountry: '',
     siteAddress: '',
     siteRating: 0, // Assuming rating is collected elsewhere
     sitePics: [],
     siteDesc: '',
     siteOperatingHour: '',
   });
+  const [countries, setCountries] = useState([]);
+  const [country, setCountry] = useState('');
 
+  const handleCountryChange = (e) => {
+    const inputCountry = e.target.value;
+    if (countries.find(country => country.name === inputCountry)) {
+      setCountry(inputCountry);
+    } else {
+      setCountry('');
+    }
+  };
+
+  useEffect(() => {
+    // Use the imported country data
+    const formattedCountryData = countryData.map(country => ({
+      name: country.name.common,
+      code: country.cca2,
+    })).sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
+    setCountries(formattedCountryData);
+  }, []);
 
   const navigate = useNavigate();
 
@@ -45,11 +64,11 @@ const CreateSiteForm = () => {
         alert('Site created successfully!');
         setSite({
           siteName: '',
-          siteCountry: '',
           siteAddress: '',
           siteDesc: '',
           siteOperatingHour: '',
         });
+        setCountry('');
         navigate('/admin/glo2go/viewsite'); // Adjust this route as needed
       } else {
         alert('Failed to create site. Please try again.');
@@ -78,24 +97,20 @@ const CreateSiteForm = () => {
             error={!site.siteName} // Set error state for empty field
             helperText={!site.siteName ? 'Please enter a name for your site.' : ''} // Display error message
           />
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Country</InputLabel>
-            <Select
-              value={site.siteCountry}
-              onChange={handleInputChange}
-              label="Country"
-              name="siteCountry"
-              required // Mark as required field
-              error={!site.siteCountry} // Set error state for empty field
-            >
-              {countries.map((country) => (
-                <MenuItem key={country.code} value={country.name}>
-                  {country.name}
-                </MenuItem>
-              ))}
-            </Select>
-            {!site.siteCountry && <FormHelperText error>Please select a country.</FormHelperText>}
-          </FormControl>
+          <TextField
+            select
+            label="Country"
+            fullWidth
+            value={country}
+            onChange={handleCountryChange}
+            margin="normal"
+          >
+            {countries.map((country) => (
+              <MenuItem key={country.code} value={country.name}>
+                {country.name}
+              </MenuItem>
+            ))}
+          </TextField>
           <TextField
             label="Address"
             fullWidth

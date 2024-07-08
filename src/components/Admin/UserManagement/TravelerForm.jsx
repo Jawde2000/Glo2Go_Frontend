@@ -1,60 +1,81 @@
-import React, { useState } from 'react';
-import { TextField, Button, Link, Paper, Divider, Grid, Checkbox, FormControlLabel } from '@material-ui/core';
+import React, { useState, useEffect } from 'react';
+import { Paper, Grid, Checkbox, FormControlLabel, Snackbar, Alert } from '@mui/material';
+import { TextField, Button, InputAdornment, IconButton } from '@material-ui/core';
 import { Typography } from "@mui/material";
-import { useSnackbar } from 'notistack';
-import { IsValidEmail } from "../../../components/functions/IsValidEmail";
-import { Loader } from "../../commons/Loader/Loader";
-import { Google as GoogleIcon } from '@mui/icons-material';
 import { registerAdmin } from '../../../actions/userActions';
 import { useSelector, useDispatch } from 'react-redux';
 import { USER_REGISTER_RESET } from '../../../constants/userConstants';
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 
 const TravelerForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isAdmin, setIsAdmin] = useState(false); // New state for admin checkbox
-  const [loading, setLoading] = useState(false); // Loading state
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // State for password visibility
   const userRegister = useSelector(state => state.userRegister);
+  const { success, error, message } = userRegister;
   const navigate = useNavigate();
-  const { success, userInfo } = userRegister;
   const dispatch = useDispatch();
 
-  const { enqueueSnackbar } = useSnackbar();
+  useEffect(() => {
+    if (success) {
+      setSnackbarMessage("User register Successful");
+      setSnackbarOpen(true);
+      // Optionally reset form state after successful registration
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      setIsAdmin(false);
+      dispatch({ type: USER_REGISTER_RESET });
+    } else if (error) {
+      setSnackbarMessage("Failed to register user");
+      setSnackbarOpen(true);
+      dispatch({ type: USER_REGISTER_RESET });
+    }
+  }, [success, error, dispatch]);
 
   const handleRegister = async () => {
-    setLoading(true); // Start loading
-    console.log("Enter Register");
+    // Validate all fields are filled
+    if (!email || !password || !confirmPassword) {
+      setSnackbarMessage('Please fill in all fields.');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    setLoading(true);
 
     try {
-      dispatch(registerAdmin(email, password, confirmPassword, isAdmin));
+      await dispatch(registerAdmin(email, password, confirmPassword, isAdmin));
     } catch (error) {
       console.error('Error during registration:', error);
-      enqueueSnackbar('Network error. Please try again later.', { variant: 'error' });
+      setSnackbarMessage('Network error. Please try again later.');
+      setSnackbarOpen(true);
     } finally {
-      setLoading(false); // Stop loading regardless of the outcome
-      dispatch({type: USER_REGISTER_RESET})
+      setLoading(false);
     }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <Paper elevation={3} style={{ padding: 16, width: 300 }}>
-      <Button onClick={() => navigate(-1)}><ArrowBackIcon /> Back</Button>
-        {loading && <Loader />}
-        <Typography
-          variant="h5"
-          sx={{
-            fontSize: '1rem',         // Sets the font size to 1rem
-            fontStyle: 'italic',      // Makes the font style italic
-            fontFamily: 'Cursive',    // Sets the font family to a cursive style
-            color: 'deepPurple',      // Sets the font color to deep purple
-            textAlign: 'center',      // Centers the text horizontally
-          }}
-        >
-          Register An User
+        <Button onClick={() => navigate(-1)}><ArrowBackIcon /> Back</Button>
+        <Typography variant="h5" sx={{ textAlign: 'center', marginBottom: 2 }}>
+          Register User
         </Typography>
         <TextField
           label="Email"
@@ -66,7 +87,7 @@ const TravelerForm = () => {
         <TextField
           label="Password"
           fullWidth
-          type="password"
+          type={'password'} // Toggle password visibility
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           margin="normal"
@@ -74,7 +95,7 @@ const TravelerForm = () => {
         <TextField
           label="Confirm Password"
           fullWidth
-          type="password"
+          type={'password'} // Toggle password visibility
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           margin="normal"
@@ -99,9 +120,16 @@ const TravelerForm = () => {
         >
           Register User
         </Button>
-        <Grid container alignItems="center" style={{ margin: '20px 0' }}>
+        <Grid container alignItems="center" style={{ marginTop: '10px' }}>
         </Grid>
       </Paper>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        message={snackbarMessage}
+      />
     </div>
   );
 };

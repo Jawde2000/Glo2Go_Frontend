@@ -120,7 +120,7 @@ const Dashboard = () => {
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Header title="DASHBOARD" subtitle="Glo2Go dashboard" />
         <Box>
-          <Button
+          {/* <Button
             sx={{
               backgroundColor: colors.blueAccent[700],
               color: colors.grey[100],
@@ -131,7 +131,7 @@ const Dashboard = () => {
           >
             <DownloadOutlinedIcon sx={{ mr: "10px" }} />
             Download Reports
-          </Button>
+          </Button> */}
         </Box>
       </Box>
 
@@ -327,12 +327,12 @@ const Dashboard = () => {
           </Box>
         </Box>
         <Box
-          gridColumn="span 4"
+          gridColumn="span 8"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
           padding="30px"
         >
-          <Typography
+          {/* <Typography
             variant="h5"
             fontWeight="600"
             sx={{ marginBottom: "15px" }}
@@ -341,7 +341,7 @@ const Dashboard = () => {
           </Typography>
           <Box height="200px">
             <GeographyChart isDashboard={true} />
-          </Box>
+          </Box> */}
         </Box>
       </Box>
     </Box>

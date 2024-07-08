@@ -98,7 +98,7 @@ function App() {
           <Route path="glo2go/travelplans/newtimeline" element={<NewTimelines />} />
           <Route path="glo2go/signup" element={<SignUp />} />
           <Route path="glo2go/login" element={<LoginUserScreen />} />
-          <Route path="glo2go/reset-password" element={<ResetPassword />} />
+          <Route path="glo2go/reset-password/:token" element={<ResetPassword />} />
           <Route path="admin/glo2go/updatesite" element={<UpdateSiteForm />} />
           <Route path="admin/glo2go/createsite" element={<CreateSiteForm />} />
           <Route path="admin/glo2go/site" element={<ViewSites />} />

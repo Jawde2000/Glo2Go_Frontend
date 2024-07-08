@@ -36,8 +36,9 @@ const persistConfig = {
 
 const persistedReducer = persistReducer(persistConfig, reducer);
 
-const userInfoFromCookies = Cookies.get('userinfo') ?
-    JSON.parse(Cookies.get('userinfo')) : null;
+const userInfoFromCookies = Cookies.get('userinfo');
+
+console.log(userInfoFromCookies);
 
 const userAdminFromCookies = Cookies.get('admin');
 const userTokenFromCookies = Cookies.get('token');
@@ -45,10 +46,10 @@ const userRefreshFromCookies = Cookies.get('refreshToken');
 
 const initialState = {
     userLogin: {
-        userInfo: userInfoFromCookies,
-        admin: userAdminFromCookies,
-        token: userTokenFromCookies,
-        refreshToken: userRefreshFromCookies,
+        userInfo: userInfoFromCookies? userInfoFromCookies:null,
+        admin: userAdminFromCookies? userAdminFromCookies:null,
+        token: userTokenFromCookies? userTokenFromCookies:null,
+        refreshToken: userRefreshFromCookies? userRefreshFromCookies:null,
     }
 };
 

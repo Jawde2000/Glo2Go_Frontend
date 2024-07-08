@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Typography, Container, Box, Button, CircularProgress, Dialog, DialogTitle, DialogContent, DialogContentText, 
-  DialogActions, TextField, IconButton, Tooltip } from '@mui/material';
+  DialogActions, TextField, IconButton, Tooltip, MenuItem, Snackbar } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import axios from 'axios';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { useNavigate } from 'react-router-dom';
+import countryData from "../../timelines/new_timelines/country.json"
 
 const ViewSites = () => {
   const [sites, setSites] = useState([]);
@@ -22,6 +23,10 @@ const ViewSites = () => {
     siteDesc: '',
     siteOperatingHour: ''
   });
+  const [countries, setCountries] = useState([]);
+  const [country, setCountry] = useState('');
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -32,6 +37,13 @@ const ViewSites = () => {
   };
 
   const handleSubmit = async () => {
+    // Check if any required field is empty
+    if (!newSite.siteName || !newSite.siteCountry || !newSite.siteAddress || !newSite.siteDesc || !newSite.siteOperatingHour) {
+      setSnackbarMessage('Please fill in all fields.');
+      setSnackbarOpen(true);
+      return;
+    }
+
     try {
       const response = await axios.post('https://localhost:7262/api/Site/AddSite', newSite);
       if (response.data) {
@@ -42,6 +54,15 @@ const ViewSites = () => {
     } catch (error) {
       console.error('Failed to add site:', error);
       alert('Failed to add site');
+    }
+  };
+
+  const handleCountryChange = (e) => {
+    const inputCountry = e.target.value;
+    if (countries.find(country => country.name === inputCountry)) {
+      setNewSite({ siteCountry: inputCountry });
+    } else {
+      setNewSite('');
     }
   };
 
@@ -133,6 +154,15 @@ const ViewSites = () => {
     }
   };
 
+  useEffect(() => {
+    // Use the imported country data
+    const formattedCountryData = countryData.map(country => ({
+      name: country.name.common,
+      code: country.cca2,
+    })).sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
+    setCountries(formattedCountryData);
+  }, []);
+
   return (
     <Container maxWidth="lg">
       <Typography variant="h4" gutterBottom textAlign="center" sx={{ margin: '20px 0' }}>
@@ -162,13 +192,13 @@ const ViewSites = () => {
       ) : error ? (
         <Typography variant="h6" textAlign="center" color="error">{error}</Typography>
       ) : (
-        <Box sx={{ height: 700, width: '100%' }}>
+        <Box sx={{ height: 1000, width: '100%' }}>
           <DataGrid
             rows={sites}
             columns={columns}
             pageSize={5}  // Number of rows per page
             rowsPerPageOptions={[5, 10, 20]}  // Options for rows per page
-            checkboxSelection
+            checkboxSelection={false}
             disableSelectionOnClick
             getRowId={(row) => row.siteID}
           />
@@ -189,15 +219,19 @@ const ViewSites = () => {
             onChange={handleInputChange}
           />
           <TextField
-            margin="dense"
+            select
             label="Country"
-            type="text"
             fullWidth
-            variant="outlined"
-            name="siteCountry"
             value={newSite.siteCountry}
-            onChange={handleInputChange}
-          />
+            onChange={handleCountryChange}
+            margin="normal"
+          >
+            {countries.map((country) => (
+              <MenuItem key={country.code} value={country.name}>
+                {country.name}
+              </MenuItem>
+            ))}
+          </TextField>      
           <TextField
             margin="dense"
             label="Address"
@@ -213,6 +247,8 @@ const ViewSites = () => {
             label="Description"
             type="text"
             fullWidth
+            multiline
+            rows={10}
             variant="outlined"
             name="siteDesc"
             value={newSite.siteDesc}
@@ -227,6 +263,9 @@ const ViewSites = () => {
             name="siteOperatingHour"
             value={newSite.siteOperatingHour}
             onChange={handleInputChange}
+            InputProps={{
+              placeholder: 'e.g., 6AM - 7PM',
+            }}
           />
         </DialogContent>
         <DialogActions>
@@ -234,6 +273,12 @@ const ViewSites = () => {
           <Button onClick={handleSubmit} color="primary">Add Site</Button>
         </DialogActions>
       </Dialog>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMessage}
+      />
     </Container>
   );
 };

@@ -186,7 +186,7 @@ const TravelerList = () => {
           rows={travelers}
           columns={columns}
           pageSize={5}
-          checkboxSelection
+          checkboxSelection={false}
           disableSelectionOnClick
           getRowId={(row) => row.travelerEmail}
           loading={loading}

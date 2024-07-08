@@ -133,7 +133,7 @@ const ReportListAdmin = () => {
           rows={reports}
           columns={columns}
           pageSize={5}
-          checkboxSelection
+          checkboxSelection={false}
           disableSelectionOnClick
           getRowId={(row) => row.reportId}
           loading={loading}

@@ -11,7 +11,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useDispatch, useSelector } from 'react-redux';
 import { createEvent, updateEvent, deleteEvent, fetchEvents } from '../../../actions/eventActions';
 import Cookies from 'js-cookie';
-import { EVENT_CREATE_RESET, EVENT_DELETE_RESET } from '../../../constants/eventConstants';
+import { EVENT_UPDATE_RESET, EVENT_CREATE_RESET, EVENT_DELETE_RESET } from '../../../constants/eventConstants';
 import {APILoader, PlacePicker} from '@googlemaps/extended-component-library/react';
 
 const eventTypes = [
@@ -264,9 +264,11 @@ const Timetable = () => {
   const eventGet = useSelector(state => state.eventGet);
   const eventCreate = useSelector(state => state.eventCreate);
   const eventDelete = useSelector(state => state.eventDelete);
+  const eventUpdate = useSelector(state => state.eventUpdate);
   const { loading, events } = eventGet;
   const { success: createSuccess, event: message } = eventCreate;
   const { success: deleteSuccess, event: messageDelete } = eventCreate;
+  const { success: updateSuccess } = eventUpdate;
   const [historicalData, setHistoricalData] = useState([]);
   const [isHistoricalModalOpen, setIsHistoricalModalOpen] = useState(false);
   const dispatch = useDispatch();
@@ -314,6 +316,7 @@ const Timetable = () => {
     try {
       // Dispatch action to handle created event
       dispatch(createEvent(event, timetableID));
+      window.location.reload();
     } catch (error) {
       console.error("Failed to create event:", error);
     }
@@ -322,6 +325,7 @@ const Timetable = () => {
   const handleUpdateEvent = async (event) => {
     try {
       dispatch(updateEvent(event));
+      window.location.reload();
     } catch (error) {
       console.error('Failed to update event:', error);
     }
@@ -331,6 +335,7 @@ const Timetable = () => {
     console.log(id);
     try {
       dispatch(deleteEvent(id));
+      window.location.reload();
     } catch (error) {
       console.error('Failed to delete event:', error);
     }
@@ -401,7 +406,7 @@ const Timetable = () => {
         date: new Date(entry.dt * 1000).toISOString().split('T')[0],
         time: new Date(entry.dt * 1000).toISOString().split('T')[1].split('.')[0],
         weather: entry.weather[0].description,
-        temperature: `${entry.main.temp}°C`
+        temperature: `${(entry.main.temp / 10).toFixed(2)}°C`
       }));
 
       console.log(filteredWeatherData);

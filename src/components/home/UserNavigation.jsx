@@ -268,16 +268,6 @@ const UserNavigationbar = () => {
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
               <Typography variant="h6" gutterBottom>Profile</Typography>
-                <Avatar src={profilePic} sx={{ width: 80, height: 80 }} />
-                <Button 
-                  onChange={(e) => setProfilePic(e.target.value)} 
-                  variant="outlined" 
-                  color="primary" 
-                  sx={{ mt: 2 }} 
-                  type="file"
-                >
-                  Change Photo
-                </Button>
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
@@ -326,11 +316,6 @@ const UserNavigationbar = () => {
                     <MenuItem value={2}>Other</MenuItem>
                   </Select>
                 </FormControl>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Button variant="outlined" onClick={handleModalOpen} fullWidth>
-                  Reset Password
-                </Button>
               </Grid>
             </Grid>
           </Box>
