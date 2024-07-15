@@ -38,6 +38,7 @@ import SearchPage from './components/home/SearchPage.jsx';
 import ReportList from './components/home/ReportList.jsx';
 import ReportListAdmin from './components/Admin/reportManagement/ReportList.jsx';
 import Cookies from 'js-cookie';
+import OtpScreen from './components/login/OtpScreen.jsx';
 
 const drawerWidth = 300;
 
@@ -116,6 +117,7 @@ function App() {
           <Route path="glo2go/travelplans/edit/:tableId" element={<UpdateTimeline/>} />
           <Route path="glo2go/search/:searchItem" element={<SearchPage/>} />
           <Route path="glo2go/report/:travelerEmail" element={<ReportList/>} />
+          <Route path="glo2go/login/otp/:email" element={<OtpScreen/>} />
           {/* Include any other routes here */}
         </Routes>
         <Footer />

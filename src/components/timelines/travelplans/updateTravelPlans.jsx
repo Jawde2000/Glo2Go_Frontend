@@ -170,7 +170,7 @@ const UpdateTimeline = () => {
             variant="contained"
             color="primary"
             onClick={handleSave}
-            disabled={loading || loadin}
+            disabled={loading || loadin || new Date(startDate) > new Date(endDate)}
           >
             Save
           </Button>

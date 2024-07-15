@@ -28,10 +28,12 @@ function LoginUserScreen() {
   useEffect(() => {
     const admin = Cookies.get("admin");
     if (userInfo) {
+      var user = JSON.parse(userInfo);
+      console.log(user);
       if (admin === "true") {
         navigate('/glo2go/admin');
       } else {
-        navigate('/glo2go/home');
+        navigate('/glo2go/login/otp/' + user.TravelerEmail);
       }
     }
   }, [navigate, userInfo]);

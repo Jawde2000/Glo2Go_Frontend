@@ -3,12 +3,11 @@ import { TextField, Button, Paper, Divider, Grid, MenuItem } from '@material-ui/
 import { Typography } from "@mui/material";
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
-import {Loader} from "../../commons/Loader/Loader.jsx";
+import { Loader } from "../../commons/Loader/Loader.jsx";
 import { useSelector, useDispatch } from 'react-redux';
 import { createTimeline } from '../../../actions/timelinesActions';
 import { TIMELINE_CREATE_RESET } from '../../../constants/timelineConstants';
 import countryData from '../../commons/country.json';
-import axios from 'axios';
 
 const NewTimelines = () => {
   const [title, setTitle] = useState('');
@@ -17,7 +16,6 @@ const NewTimelines = () => {
   const [country, setCountry] = useState('');
   const [region, setRegion] = useState('');
   const [countries, setCountries] = useState([]);
-  const [regions, setRegions] = useState('');
   const [loading, setLoading] = useState(false);
 
   const { enqueueSnackbar } = useSnackbar();
@@ -47,6 +45,10 @@ const NewTimelines = () => {
   }, []);
 
   const handleSave = async () => {
+    if (new Date(startDate) > new Date(endDate)) {
+      enqueueSnackbar('Start date cannot be later than end date', { variant: 'error' });
+      return;
+    }
     setLoading(true);
     try {
       dispatch(createTimeline(title, startDate, endDate, country, region));
@@ -147,7 +149,7 @@ const NewTimelines = () => {
             variant="contained"
             color="primary"
             onClick={handleSave}
-            disabled={loading || !title || !startDate || !endDate || !country || !region}
+            disabled={loading || !title || !startDate || !endDate || !country || !region || new Date(startDate) > new Date(endDate)}
           >
             Save
           </Button>
